@@ -4,14 +4,13 @@ tmerge
 
 =head1 SYNOPSIS
 
-A utility to merge transcriptome read-to-genome alignments into non-redundant transcript models.
+Merge transcriptome read-to-genome alignments into non-redundant transcript models.
 
 C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models.
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png"
-width="500" height="250" alt="tmerge sketch" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png" alt="tmerge sketch" /></p>
 
 =end HTML
 
