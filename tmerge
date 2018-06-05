@@ -1,0 +1,638 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use Data::Dumper;
+use UUID::Generator::PurePerl;
+use Getopt::Long;
+use Pod::Usage;
+use Parallel::ForkManager;
+
+no warnings 'recursion';
+
+my $message_text  = "Error\n";
+my $exit_status   = 2;          ## The exit status to use
+my $verbose_level = 99;          ## The verbose level to use
+my $filehandle    = \*STDERR;   ## The filehandle to write to
+my $sections = "NAME|SYNOPSIS|DESCRIPTION";
+
+
+=head1 NAME
+
+tmerge
+
+=head1 SYNOPSIS
+
+A utility to merge transcriptome read-to-genome alignments into non-redundant transcript models.
+
+C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models.
+
+=begin HTML
+
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png"
+width="500" height="250" alt="tmerge sketch" /></p>
+
+=end HTML
+
+See DESCRIPTION below for more details.
+
+B<Usage example>:
+
+C<< tmerge -cpu <number of CPUs> --tmPrefix <string to prepend to output transcript_ids> <input GTF file> > <output file> >>
+
+
+=head2 INPUT
+
+GTF file of read-to-genome alignments, sorted by chromosome and start position.
+Only C<exon> records are considered.
+Read alignments need to be uniquely identified with the C<transcript_id> GTF attribute. C<transcript_id> is the only mandatory GTF attribute in input records.
+
+=head2 OPTIONS
+
+=over
+
+=item B<cpu> (integer) = Number of CPUs to use
+
+Default: 1
+
+=item B<tmPrefix> (string) = Prefix string for transcript_id identifiers in the output
+
+Default: '' (empty string)
+
+=back
+
+=head2 OUTPUT
+
+C<tmerge> outputs GTF. The output contains a set of transcript models
+chr7    tmerge  exon    98207754        98209634        .       +       .       gene_id "blahTM_000000000007"; transcript_id "blahTM_000000000007"; contains "23aa004d-2eab-42ea-b731-3ebe13820c2e/436f4b3f50a7179009afed1bea7c0a631b23f514,3fa67222-f04e-4932-a69c-7585a142ddb8/436f4b3f50a7179009afed1bea7c0a631b23f514,900811a4-ec46-4bf7-b8ea-5d5fbead752e/436f4b3f50a7179009afed1bea7c0a631b23f514,d086ce93-926e-4ad5-90c8-a8a1844b1832/436f4b3f50a7179009afed1bea7c0a631b23f514,dbb204c8-5b77-4b9c-a37d-6334e4db58f6/436f4b3f50a7179009afed1bea7c0a631b23f514,f7b7c67e-c65e-4014-a4c7-8f784541fd1b/436f4b3f50a7179009afed1bea7c0a631b23f514";
+
+
+=head1 DESCRIPTION
+
+
+=head1 DEPENDENCIES
+
+CPAN:
+
+=over
+
+=item UUID::Generator::PurePerl
+
+=item Parallel::ForkManager
+
+=back
+
+=head1 AUTHOR
+
+Julien Lagarde, CRG, Barcelona, contact julienlag@gmail.com
+
+=cut
+
+
+
+my $tmPrefix='';
+my $cpu=1;
+GetOptions ('tmPrefix=s' => \$tmPrefix,
+            'cpu=i' => \$cpu
+            )
+or pod2usage( { -message => "Error in command line arguments",
+        		  -exitval => $exit_status  ,
+            		-verbose => $verbose_level,
+               -output  => $filehandle } );
+
+unless (defined $ARGV[0]){
+	pod2usage( { -message => "Error in command line arguments: no input provided.",
+        		  -exitval => $exit_status  ,
+            		-verbose => $verbose_level,
+               -output  => $filehandle } );
+}
+
+my $tmpdir="/tmp/";
+if(exists $ENV{'TMPDIR'}){
+	$tmpdir=$ENV{'TMPDIR'};
+}
+print STDERR "Using TMP DIR: $tmpdir (to change that, edit the TMPDIR environment variable)\n";
+
+my $process_manager = Parallel::ForkManager->new($cpu);
+
+my $sortedGff;
+if(defined($ARGV[0])){
+	$sortedGff=$ARGV[0];
+}
+else{
+	die "Need input GTF file name as argument.\n";
+}
+
+open GFF, "$sortedGff" or die $!;
+
+my %transcript_to_transcript=();
+my %transcript_exons=();
+my %transcript_chr=();
+my %transcript_strand=();
+my $previous_start=-1;
+my $previous_chr='Caravaggio';
+my $previous_transcript='Delacroix';
+my $superExonStart=-1;
+my $superExonStop=-1;
+my %transcript_id_index=();
+
+print STDERR "Parsing GTF input...\n";
+my $nr_exons=0;
+my $transcript_count=0;
+my %transcript_seen=();
+my %transcript_index=();
+my %transcript_rev_index=();
+while (<GFF>){
+	next if ($_=~/^#/);
+	if ($_=~/^(\S+)\t(\S+)\t(\S+)\t(\d+)\t(\d+)\t\S+\t(\S+)\t\S+\t.*transcript_id "(\S+)?";/){
+		if ($3 eq "exon"){
+			$nr_exons++;
+			my $GTFtranscript_id=$7;
+			my $chr=$1;
+			my $start=$4;
+			my $stop=$5;
+			my $str=$6;
+			my $strand;
+			if($str eq '+'){
+				$strand=1;
+			}
+			elsif($str eq '-'){
+				$strand=-1;
+			}
+			elsif($str eq '.'){
+				$strand=0;
+			}
+			else{
+				die "Unrecognized strand value '$str' at line $.\n";
+			}
+			unless(exists $transcript_seen{$GTFtranscript_id}){
+				$transcript_count++;
+				$transcript_seen{$GTFtranscript_id}=undef;
+				$transcript_index{$transcript_count}=$GTFtranscript_id;
+				$transcript_rev_index{$GTFtranscript_id}=$transcript_count;
+			}
+
+			my $transcript_id=$transcript_rev_index{$GTFtranscript_id};
+			#Check for sorted input:
+			die "ERROR: Unsorted GTF input (line $.). Must be sorted by chr, then start, then stop. Can't continue.\n" if ($chr eq $previous_chr && $start < $previous_start);
+			$transcript_strand{$transcript_id}=$strand;
+			$transcript_chr{$transcript_id}=$chr;
+			my @exon=($chr, $start, $stop, $strand);
+			push(@{$transcript_exons{$transcript_id}}, \@exon);
+			$transcript_to_transcript{$transcript_id}{$transcript_id}=undef;
+			my $overlapWithPrevious=overlap($superExonStart, $superExonStop, $start, $stop);
+			if ($chr eq $previous_chr && $overlapWithPrevious == 1){
+				$transcript_to_transcript{$transcript_id}{$previous_transcript}=undef;
+				$transcript_to_transcript{$previous_transcript}{$transcript_id}=undef;
+				if($stop > $superExonStop){
+					$superExonStop = $stop;
+				}
+			}
+
+			else{
+				#re-initialize superExon
+				$previous_chr=$chr;
+				$superExonStart=$start;
+				$superExonStop=$stop;
+			}
+			$previous_transcript=$transcript_id;
+			$previous_start=$start;
+		}
+	}
+	else{
+		die "ERROR: line $.: malformed GTF record. Can't continue.\n";
+
+	}
+
+}
+close GFF;
+print STDERR "Done. Found $nr_exons exons and $transcript_count transcripts.\n";
+%transcript_seen=();
+%transcript_rev_index=();
+
+print STDERR "Building contigs (sets of overlapping transcripts)...\n";
+
+my $ug = UUID::Generator::PurePerl->new();
+my $locusNumber = $ug->generate_v1();
+my %transcript_id_to_locus_id=();
+foreach my $tr1 (keys %transcript_to_transcript){
+	buildContig($tr1, \%transcript_to_transcript, \%transcript_id_to_locus_id, $locusNumber);
+	#generate UUID for contig (this is to write temp files):
+	my $ug = UUID::Generator::PurePerl->new();
+    $locusNumber = $ug->generate_v1();
+}
+
+%transcript_to_transcript=(); #free up some memory
+
+my %contig_to_transcripts=();
+foreach my $tr (keys %transcript_id_to_locus_id){
+	my $contig=$transcript_id_to_locus_id{$tr};
+	push(@{$contig_to_transcripts{$contig}}, $tr);
+}
+%transcript_id_to_locus_id=();
+print STDERR "Done\n";
+print STDERR "Comparing transcript structures...\n";
+my $countTranscripts2=0;
+my %transcript_introns=();
+my $containerNumber=0;
+
+my $countContigs=0;
+CONTIGS: foreach my $contig (keys %contig_to_transcripts){
+	$countContigs++;
+	#print STDERR "$countContigs\n";
+	$process_manager->start and next CONTIGS;
+	#print STDERR "CONTIG: $contig\n";
+	my %container_to_transcripts=(); #'value' is a subset of , or equal to, 'key''s intron chain. If the reciprocal is found (i.e. both 'A' => 'B' and 'B' => 'A' exist, then A and B have the exact same intron chain.
+	my %transcript_to_container=();
+	my %incompatibles=();
+	my @list1=@{$contig_to_transcripts{$contig}};
+	my %tr2_already_in_tr1=();
+	#build introns within contig:
+	%transcript_introns=();
+	foreach my $tr (@list1){
+		for (my $i=0; $i< $#{$transcript_exons{$tr}};$i++){
+			my $intronChr=${$transcript_exons{$tr}}[$i][0];
+			my $intronStrand=${$transcript_exons{$tr}}[$i][3];
+			my $intronStart=${$transcript_exons{$tr}}[$i][2]+1;
+			my $intronStop=${$transcript_exons{$tr}}[$i+1][1]-1;
+			my @intron=($intronChr, $intronStart, $intronStop, $intronStrand);
+			push(@{$transcript_introns{$tr}}, \@intron);
+		}
+	}
+
+	my @list1Spliced=();
+	foreach my $tr1 (@list1){
+		if(exists($transcript_introns{$tr1})){
+			push(@list1Spliced, $tr1);
+		}
+	}
+	my @sortedList1Spliced= sort ({ ${$transcript_introns{$b}}[0][1] <=> ${$transcript_introns{$a}}[0][1] or ${$transcript_exons{$b}}[0][1] <=> ${$transcript_exons{$a}}[0][1] or $a cmp $b } @list1Spliced); #reverse-sort spliced transcripts by position of first intron. second and third comparisons are necessary so the script is deterministic (otherwise ties are handled randomly)
+	@list1Spliced=();
+	my @sortedList2Spliced=@sortedList1Spliced;
+
+	foreach my $tr2 (@sortedList2Spliced){ #compare intron chains pairwise
+
+		NEXTTR1: foreach my $tr1 (@sortedList1Spliced){
+			unless ($tr1 == $tr2 || (exists($container_to_transcripts{$tr2}) && exists($container_to_transcripts{$tr2}{$tr1}))){
+				if( $transcript_strand{$tr1} == $transcript_strand{$tr2} && overlap(${$transcript_exons{$tr1}}[0][1],${$transcript_exons{$tr1}}[$#{$transcript_exons{$tr1}}][2],${$transcript_exons{$tr2}}[0][1],${$transcript_exons{$tr2}}[$#{$transcript_exons{$tr2}}][2]) == 1) { #check that tr1 and tr2 are on the same strand and overlap
+					#are intron chains compatible? (ie is tr2 a subset or equal to tr1?
+					my $intronTr1Index=0;
+					my $countIntronsTr2MatchedToTr1=-1;
+					foreach my $intronTr2 (@{$transcript_introns{$tr2}}){
+						for (my $i=$intronTr1Index; $i<= $#{$transcript_introns{$tr1}}; $i++){
+							my $intronTr1= ${$transcript_introns{$tr1}}[$i];
+							my $overlap=overlap(${$intronTr1}[1], ${$intronTr1}[2], ${$intronTr2}[1], ${$intronTr2}[2]);
+							if($overlap == 1){
+								if(${$intronTr2}[1] == ${$intronTr1}[1] && ${$intronTr2}[2] == ${$intronTr1}[2]){
+									$countIntronsTr2MatchedToTr1++;
+									$intronTr1Index=$i+1; #skip directly to next $tr1 intron at the next round (next $tr2 intron)
+							 		last;
+								}
+								else{ # introns overlap but don't exactly match, give up current tr1
+									$incompatibles{$tr1}{$tr2}=undef;
+									next NEXTTR1;
+								}
+							}
+							elsif($overlap == -1){ #intron1 is downstream of intron2
+								if($countIntronsTr2MatchedToTr1 == $#{$transcript_introns{$tr2}}){ # all tr2 introns have found a match in tr2
+									if(checkIntronExonOverlap($tr1,$tr2,\%incompatibles,0) ==0){
+										$container_to_transcripts{$tr1}{$tr2}=undef ;
+										$transcript_to_container{$tr2}{$tr1}=undef;
+										next NEXTTR1;
+									}
+									else{
+										next NEXTTR1;
+									}
+								}
+								$incompatibles{$tr1}{$tr2}=undef;
+								next NEXTTR1;
+							}
+
+						}
+					}
+					if($countIntronsTr2MatchedToTr1 == $#{$transcript_introns{$tr2}}){ #fully identical intron chain match
+						if(checkIntronExonOverlap($tr1,$tr2,\%incompatibles,0) ==0){
+							$container_to_transcripts{$tr1}{$tr2}=undef ;
+							$transcript_to_container{$tr2}{$tr1}=undef;
+							next NEXTTR1;
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	@sortedList2Spliced=();
+	@sortedList1Spliced=();
+
+	#merge monoexonic reads
+	my @sortedList1= sort ({ ${$transcript_exons{$a}}[0][1] <=> ${$transcript_exons{$b}}[0][1] or ${$transcript_exons{$a}}[0][2] <=> ${$transcript_exons{$b}}[0][2] or $a cmp $b } @list1); #sort transcripts by start position of first exon
+	my @sortedList2=@sortedList1;
+	@list1=();
+
+	foreach my $tr2 (@sortedList2){
+		unless (exists $transcript_introns{$tr2}){ #process only monoexonic reads
+			NEXTTR1: foreach my $tr1 (@sortedList1){
+				unless ($tr1 == $tr2 || (exists($container_to_transcripts{$tr2}) && exists($container_to_transcripts{$tr2}{$tr1}))){
+					if( $transcript_strand{$tr1} == $transcript_strand{$tr2} && overlap(${$transcript_exons{$tr1}}[0][1],${$transcript_exons{$tr1}}[$#{$transcript_exons{$tr1}}][2],${$transcript_exons{$tr2}}[0][1],${$transcript_exons{$tr2}}[$#{$transcript_exons{$tr2}}][2]) == 1) {#check that tr1 and tr2 are on the same strand and overlap
+						foreach my $exonTr2 (@{$transcript_exons{$tr2}}){
+							for (my $i=0; $i<= $#{$transcript_exons{$tr1}}; $i++){
+								my $exonTr1= ${$transcript_exons{$tr1}}[$i];
+								my $overlap=overlap(${$exonTr1}[1], ${$exonTr1}[2], ${$exonTr2}[1], ${$exonTr2}[2]);
+								if($overlap == 1){
+									if($i==0){ #leftmost exon of $tr1
+										if(${$exonTr2}[2] <= ${$exonTr1}[2]){
+											$container_to_transcripts{$tr1}{$tr2}=undef ;
+											$transcript_to_container{$tr2}{$tr1}=undef;
+											next NEXTTR1;
+										}
+										else{
+											$incompatibles{$tr1}{$tr2}=undef;
+										}
+									}
+									elsif($i == $#{$transcript_exons{$tr1}}){ #rightmost exon of $tr1
+										if(${$exonTr2}[1] >= ${$exonTr1}[1]){
+											$container_to_transcripts{$tr1}{$tr2}=undef ;
+											$transcript_to_container{$tr2}{$tr1}=undef;
+											next NEXTTR1;
+										}
+										else{
+											$incompatibles{$tr1}{$tr2}=undef;
+										}
+									}
+									else{ #internal exon of $tr1
+										if(${$exonTr2}[1] >= ${$exonTr1}[1] && ${$exonTr2}[2] <= ${$exonTr1}[2]){
+											$container_to_transcripts{$tr1}{$tr2}=undef ;
+											$transcript_to_container{$tr2}{$tr1}=undef;
+											next NEXTTR1;
+										}
+										else{
+											$incompatibles{$tr1}{$tr2}=undef;
+										}
+									}
+								}
+								elsif($overlap == -1){
+									next NEXTTR1;
+								}
+							}
+						}
+					}
+
+				}
+			}
+		}
+	}
+	@sortedList2=();
+
+	# print STDERR "CT:\n"; #.Dumper \%container_to_transcripts;
+	# foreach my $i (keys %container_to_transcripts){
+	# 	print STDERR "CT: $transcript_index{$i}:\n";
+	# 	foreach my $j (keys %{$container_to_transcripts{$i}}){
+	# 		print STDERR "\t$transcript_index{$j}\n" if ($i != $j);
+	# 	}
+	# }
+
+	# print STDERR "TC:\n"; #.Dumper \%transcript_to_container;
+	# foreach my $i (keys %transcript_to_container){
+	# 	print STDERR "TC: $transcript_index{$i}:\n";
+	# 	foreach my $j (keys %{$transcript_to_container{$i}}){
+	# 		print STDERR "\t$transcript_index{$j}\n" if ($i != $j);
+	# 	}
+	# }
+
+	#delete redundant entries:
+	my %deleteContainers=();
+	my %deleteContainedTranscripts=();
+
+	foreach my $i (keys %container_to_transcripts){
+		transferContents(\%container_to_transcripts, $i, \%transcript_to_container, \%deleteContainedTranscripts, \%incompatibles, \%deleteContainers);
+	}
+
+	foreach my $i (keys %deleteContainers){
+		#print STDERR "DEBUG2 deleting CT: $transcript_index{$i} ".Dumper $container_to_transcripts{$i};
+		foreach my $j (keys %{$container_to_transcripts{$i}}){
+			#print STDERR "DEBUG2 deleting TC: $transcript_index{$j} ->  $transcript_index{$i}";
+			delete $transcript_to_container{$j}{$i};
+		}
+		delete $container_to_transcripts{$i};
+	}
+	foreach my $i (keys %deleteContainedTranscripts){
+		foreach my $j (keys %{$deleteContainedTranscripts{$i}}){
+			#print STDERR "DEBUG2 deleting TC: $transcript_index{$i} -> $transcript_index{$j}".Dumper $transcript_to_container{$i}{$j};
+			delete $transcript_to_container{$i}{$j};
+		}
+	}
+	%deleteContainers=();
+	%deleteContainedTranscripts=();
+	%transcript_introns=();
+	%incompatibles=();
+	foreach my $tr1 (keys %container_to_transcripts){
+		my $minStart=${$transcript_exons{$tr1}}[0][1];
+		my $maxStop=${$transcript_exons{$tr1}}[$#{$transcript_exons{$tr1}}][2];
+		foreach my $tr2 (keys %{$container_to_transcripts{$tr1}}){
+			$minStart=${$transcript_exons{$tr2}}[0][1] if (${$transcript_exons{$tr2}}[0][1] < $minStart);
+			$maxStop=${$transcript_exons{$tr2}}[$#{$transcript_exons{$tr2}}][2] if (${$transcript_exons{$tr2}}[$#{$transcript_exons{$tr2}}][2] > $maxStop);
+		}
+		${$transcript_exons{$tr1}}[0][1]=$minStart;
+		${$transcript_exons{$tr1}}[$#{$transcript_exons{$tr1}}][2]=$maxStop;
+	}
+
+	#print all to GTF
+	foreach my $tr (@sortedList1){
+		if (exists ($container_to_transcripts{$tr})){
+			my @transcriptsList=();
+			push(@transcriptsList, $transcript_index{$tr});
+			foreach my $tr2 (keys %{$container_to_transcripts{$tr}}){
+				push(@transcriptsList, $transcript_index{$tr2});
+			}
+			my @sortedList=sort(@transcriptsList);
+			printGTF($tr, join(",", @sortedList), $contig);
+		}
+		else{
+			unless(exists ($transcript_to_container{$tr}) && %{$transcript_to_container{$tr}}){
+				printGTF($tr, $transcript_index{$tr}, $contig);
+			}
+		}
+	}
+	$process_manager->finish;
+}
+$process_manager->wait_all_children;
+
+
+#print all output:
+foreach my $contig (keys %contig_to_transcripts){
+	my $tmpOut="$tmpdir/$contig.gff";
+	open TMPOUT, "$tmpOut" or die "ERROR: Couldn't read temp output filehandle $tmpOut\n";
+	while(<TMPOUT>){
+		print $_;
+	}
+	close TMPOUT;
+	unlink("$tmpOut");
+
+}
+
+print STDERR "Done.\n";
+
+%transcript_chr=();
+%transcript_strand=();
+
+
+sub overlap{
+	my $start1=$_[0];
+	my $stop1=$_[1];
+	my $start2=$_[2];
+	my $stop2=$_[3];
+	my $overlapValue;
+	my $start2minusstop1=$start2-$stop1;
+	my $start2minusstart1=$start2-$start1;
+	my $stop2minusstart1=$stop2-$start1;
+	my $stop2minusstop1=$stop2-$stop1;
+	if( ( $stop2minusstart1>=0  && $stop2minusstop1 <=0 ) || ($start2minusstart1 >=0 && $start2minusstop1 <=0) || ($start2minusstart1 <= 0 && $stop2minusstop1 >= 0)){
+		$overlapValue=1;
+	}
+	else{
+		if($stop2minusstart1<0){
+			$overlapValue=-1
+		}
+		elsif($start2minusstop1>0){
+			$overlapValue=-2
+		}
+	}
+	return $overlapValue; # 1  : overlap
+	                      # -1 : 2 upstream of 1
+	                      # -2 : 2 downstream of 1
+}
+
+
+sub buildContig{
+	my $trA=$_[0];
+	my $feature_to_feature=$_[1];
+	my $feature_to_contig=$_[2];
+	my $contigNumber=$_[3];
+
+	unless(exists ${$feature_to_contig}{$trA}){
+		${$feature_to_contig}{$trA}=$contigNumber;
+	}
+	foreach my $trB (keys %{${$feature_to_feature}{$trA}}){
+		unless( exists ${$feature_to_contig}{$trB} ){
+			buildContig($trB, $feature_to_feature, $feature_to_contig, $contigNumber);
+		}
+	}
+}
+
+sub transferContents{
+	my $container_to_transcripts=$_[0];
+	my $c=$_[1];
+	my $transcript_to_container=$_[2];
+	my $deleteContainedTranscripts=$_[3];
+	my $incompatibles=$_[4];
+	my $deleteContainers=$_[5];
+	return if (exists ${$deleteContainers}{$c});
+	if (exists (${$transcript_to_container}{$c})){ #if $i is itself contained in some other container
+		foreach my $t (keys %{${$container_to_transcripts}{$c}}){ #loop over all transcripts contained in c
+			foreach my $c2 (keys %{${$transcript_to_container}{$c}}){ #loop over all containers of c
+				next if (exists ${$deleteContainers}{$c2} || exists ${$deleteContainedTranscripts}{$t}{$c});
+
+				unless(exists (${$container_to_transcripts}{$c2}) && exists(${$container_to_transcripts}{$c2}{$t})){
+					unless (exists ${$incompatibles}{$c2}{$t} || checkIntronExonOverlap($c2,$t,$incompatibles,1) ==1){ # check that t is compatible with c2's introns
+						${$container_to_transcripts}{$c2}{$t}=undef;
+						${$transcript_to_container}{$t}{$c2}=undef;
+						if(exists (${$container_to_transcripts}{$t})){
+							transferContents($container_to_transcripts, $t, $transcript_to_container, $deleteContainedTranscripts, $incompatibles, $deleteContainers);
+						}
+					}
+					else{ # t incompatible with c2, can't move it in there
+						${$deleteContainedTranscripts}{$t}{$c}=undef;
+					}
+				}
+				else{
+					${$deleteContainedTranscripts}{$t}{$c}=undef;
+				}
+
+			}
+			#once we've taken care of transferring all contents of c to container of c, mark c for deletion:
+
+		}
+		${$deleteContainers}{$c}=undef;
+	}
+
+}
+
+sub printGTF{
+	my $transcript_id=$_[0];
+	my $contains=$_[1];
+	my $contig=$_[2];
+	my $fileOut="$tmpdir/$contig.gff";
+	open TMPOUT, ">>$fileOut" or die "ERROR: Couldn't open temp output filehandle $fileOut\n";
+	foreach my $exon (@{$transcript_exons{$transcript_id}}){
+		my $strand='';
+		if(${$exon}[3] == -1){
+			$strand='-';
+		}
+		elsif(${$exon}[3] == 1){
+			$strand='+';
+		}
+		elsif(${$exon}[3] == 0){
+			$strand='.';
+		}
+		else{
+			die;
+		}
+		my $tmId=makeTmId($transcript_id);
+		print TMPOUT "${$exon}[0]\ttmerge\texon\t${$exon}[1]\t${$exon}[2]\t.\t$strand\t.\tgene_id \"$tmId\"; transcript_id \"$tmId\"; contains \"$contains\";\n";
+	}
+	close TMPOUT;
+}
+
+sub checkIntronExonOverlap{
+#verify that when two A and B transcripts have compatible intron chains, there is no exon/intron overlap
+#returns 1 if any overlap found, 0 otherwise
+	my $trA=$_[0];
+	my $trB=$_[1];
+	my $incompatibles=$_[2];
+	my $terminalOnly=$_[3];
+	if(overlap(${$transcript_exons{$trA}}[0][1],${$transcript_exons{$trA}}[$#{$transcript_exons{$trA}}][2],${$transcript_exons{$trB}}[0][1],${$transcript_exons{$trB}}[$#{$transcript_exons{$trB}}][2]) == 1){
+		my @tmpExons2=@{$transcript_exons{$trB}};
+		my @exons2=();
+		if($terminalOnly == 1){
+			my @tmpExons2=@{$transcript_exons{$trB}};
+			@exons2=(shift(@tmpExons2), pop(@tmpExons2) );
+		}
+		else{
+			@exons2=@tmpExons2;
+		}
+		foreach my $exon2 (@exons2){
+			foreach my $intron1 (@{$transcript_introns{$trA}}){
+				my $overlap=overlap(${$intron1}[1], ${$intron1}[2], ${$exon2}[1], ${$exon2}[2]);
+				if($overlap == 1){
+					${$incompatibles}{$trA}{$trB}=undef;
+					return 1;
+				}
+				elsif($overlap == -1){ # intron1 is downstream of exon2, we can stop and move to next exon2
+					last;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+
+
+sub makeTmId{
+	my $id=$_[0];
+	my @newId=split("", $id);
+	#my @prefix=split("", $locPrefix);
+	my @prepend=(join("",split("", $tmPrefix)),'T','M','_');
+	my $totalLength=($#prepend+13)-length($id);
+	#print STDERR "$#prepend $tmp\n";
+	for (my $i=$#prepend+1;$i<$totalLength; $i++){
+	#	print STDERR "\t$i\n";
+		$prepend[$i]=0;
+	}
+	unshift(@newId, @prepend);
+	return(join("",@newId))
+}
+
+
