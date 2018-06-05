@@ -1,0 +1,69 @@
+=head1 NAME
+
+tmerge
+
+=head1 SYNOPSIS
+
+A utility to merge transcriptome read-to-genome alignments into non-redundant transcript models.
+
+C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models.
+
+=begin HTML
+
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png"
+width="500" height="250" alt="tmerge sketch" /></p>
+
+=end HTML
+
+See DESCRIPTION below for more details.
+
+B<Usage example>:
+
+C<< tmerge -cpu <number of CPUs> --tmPrefix <string to prepend to output transcript_ids> <input GTF file> > <output file> >>
+
+
+=head2 INPUT
+
+GTF file of read-to-genome alignments, sorted by chromosome and start position.
+Only C<exon> records are considered.
+Read alignments need to be uniquely identified with the C<transcript_id> GTF attribute. C<transcript_id> is the only mandatory GTF attribute in input records.
+
+=head2 OPTIONS
+
+=over
+
+=item B<cpu> (integer) = Number of CPUs to use
+
+Default: 1
+
+=item B<tmPrefix> (string) = Prefix string for transcript_id identifiers in the output
+
+Default: '' (empty string)
+
+=back
+
+=head2 OUTPUT
+
+C<tmerge> outputs GTF. The output contains a set of transcript models
+chr7    tmerge  exon    98207754        98209634        .       +       .       gene_id "blahTM_000000000007"; transcript_id "blahTM_000000000007"; contains "23aa004d-2eab-42ea-b731-3ebe13820c2e/436f4b3f50a7179009afed1bea7c0a631b23f514,3fa67222-f04e-4932-a69c-7585a142ddb8/436f4b3f50a7179009afed1bea7c0a631b23f514,900811a4-ec46-4bf7-b8ea-5d5fbead752e/436f4b3f50a7179009afed1bea7c0a631b23f514,d086ce93-926e-4ad5-90c8-a8a1844b1832/436f4b3f50a7179009afed1bea7c0a631b23f514,dbb204c8-5b77-4b9c-a37d-6334e4db58f6/436f4b3f50a7179009afed1bea7c0a631b23f514,f7b7c67e-c65e-4014-a4c7-8f784541fd1b/436f4b3f50a7179009afed1bea7c0a631b23f514";
+
+
+=head1 DESCRIPTION
+
+
+=head1 DEPENDENCIES
+
+CPAN:
+
+=over
+
+=item UUID::Generator::PurePerl
+
+=item Parallel::ForkManager
+
+=back
+
+=head1 AUTHOR
+
+Julien Lagarde, CRG, Barcelona, contact julienlag@gmail.com
+
