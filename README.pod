@@ -124,17 +124,17 @@ B<WARNING>: Given the rules above, recursive merging of monoexonic structures in
 
 =over
 
-=item UUID::Generator::PurePerl
+=item * UUID::Generator::PurePerl
 
 Install (bash): C<< $ cpanm UUID::Generator::PurePerl >>
 
-=item Parallel::ForkManager
+=item * Parallel::ForkManager
 
 Install (bash): C<< $ cpanm Parallel::ForkManager >>
 
 =back
 
-(When using C<cpanm> you might have to use the C<--local-lib> option if you don't have admin rights, see documentation.
+(When using C<cpanm> you might need to use the C<--local-lib> option if you don't have admin rights, see documentation.
 
 
 =head1 AUTHOR
