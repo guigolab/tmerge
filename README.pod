@@ -18,7 +18,7 @@ See DESCRIPTION below for more details.
 
 B<Usage example>:
 
-C<< tmerge -cpu <number of CPUs> --tmPrefix <string to prepend to output transcript_ids> <input GTF file> > <output file> >>
+C<< tmerge --cpu <number of CPUs> --tmPrefix <custom transcript_id prefix string for output GTF> <input GTF file> > <output file> >>
 
 
 =head2 INPUT
@@ -31,11 +31,11 @@ Read alignments need to be uniquely identified with the C<transcript_id> GTF att
 
 =over
 
-=item B<cpu> (integer) = Number of CPUs to use
+=item C<cpu> (integer) = Number of CPUs to use
 
 Default: 1
 
-=item B<tmPrefix> (string) = Prefix string for transcript_id identifiers in the output
+=item C<tmPrefix> (string) = Prefix string for transcript_id identifiers in the output
 
 Default: '' (empty string)
 
