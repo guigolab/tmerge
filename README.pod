@@ -60,18 +60,18 @@ An extra GTF attribute, C<contains>, consists of a comma-separated list of input
 
 =over
 
-=item UUID::Generator::PurePerl (CPAN)
+=item UUID::Generator::PurePerl
 
 Install (bash): C<< $ cpanm UUID::Generator::PurePerl >>
 
-=item Parallel::ForkManager (CPAN)
+=item Parallel::ForkManager
 
 Install (bash): C<< $ cpanm Parallel::ForkManager >>
 
-
-
-
 =back
+
+(When using C<cpanm> you might have to use the C<--local-lib> option, see documentation.
+
 
 =head1 AUTHOR
 
