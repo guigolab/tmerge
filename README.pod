@@ -59,7 +59,7 @@ C<tmerge> reduces redundancy in a set of transcriptome read-to-genome alignments
 
 =begin HTML
 
-<p>blahblah<img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png" alt="tmerge sketch" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png" alt="tmerge sketch" /></p>
 
 =end HTML
 
