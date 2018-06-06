@@ -71,11 +71,11 @@ Pairwise B<compatibility> between aligned structures is evaluated using the foll
 
 =over
 
-=item 1. they show exonic overlap on the same genomic strand
+=item * 1. they show exonic overlap on the same genomic strand
 
 and
 
-=item 2. either their intron chains are equal, or one is an exact subset of the other.
+=item * 2. either their intron chains are equal, or one is an exact subset of the other.
 
 =back
 
@@ -83,7 +83,7 @@ Condition (2) means that C<tmerge>, contrary to other transcript mergers, will n
 
 =begin HTML
 
-<p><img src="https://public-docs.crg.es/rguigo/CLS/img/tmerge_non_merge.png" alt="tmerge sketch" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_non_merge.png" alt="tmerge non-merge case" /></p>
 
 =end HTML
 
@@ -93,22 +93,30 @@ Condition (2) means that C<tmerge>, contrary to other transcript mergers, will n
 
 =over
 
-=item 1. they show exonic overlap on the same genomic strand
+=item * 1. they show exonic overlap on the same genomic strand
 
 and
 
-=item 2. the latter does not overlap any intron of the former.
+=item * 2. the latter does not overlap any intron of the former.
 
 
 In other words, a monoexonic read can be included into a spliced transcript only if it doesn't alter its intron chain.
 
 =back
 
+=back
+
+
 All pairs of compatible structures are then merged recursively into the longest possible TM.
 
-B<WARNING>
+B<WARNING>: Given the rules above, recursive merging of monoexonic structures into terminal exons of spliced models can lead to cases that one might consider undesirable, like the following:
 
-=back
+=begin HTML
+
+<p><img src="https://public-docs.crg.es/rguigo/CLS/img/tmerge_terminal_exons.png" alt="tmerge terminal exons" /></p>
+
+=end HTML
+
 
 
 
