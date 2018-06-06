@@ -82,19 +82,19 @@ C<tmerge> reduces redundancy in a set of transcriptome read-to-genome alignments
 
 =end HTML
 
-B<Compatibility> between aligned structures is evaluated using the following rules:
+Pairwise B<Compatibility> between aligned structures is evaluated using the following rules:
 
 =over
 
-=item A pair of B<spliced reads> is deemed compatible if:
+=item If both structures are B<spliced>, they are deemed compatible if:
 
 =over
 
-=item (1) it shows exonic overlap on the same genomic strand,
+=item (1) they show exonic overlap on the same genomic strand
 
 and
 
-=item (2) either their intron chains are equal, or one is a subset of the other
+=item (2) either their intron chains are equal, or one is an exact subset of the other
 
 =back
 
