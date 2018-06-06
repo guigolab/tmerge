@@ -65,7 +65,7 @@ By default, output C<transcript_id>s consist in arbitrary "C<TM_XXXXXXXXXXXX>" s
 
 =head2 OUTPUT
 
-C<tmerge> outputs non-redudant transcript models (B<TMs>) in GTF format. Each TM entry is uniquely identified by its C<transcript_id> attribute.
+C<tmerge> outputs non-redundant transcript models (B<TMs>) in GTF format. Each TM entry is uniquely identified by its C<transcript_id> attribute.
 
 The C<gene_id> attribute has the same value as C<transcript_id> by convention; it is therefore meaningless.
 
@@ -80,9 +80,11 @@ An extra GTF attribute, C<contains>, consists of a comma-separated list of input
 =over
 
 =item UUID::Generator::PurePerl (CPAN)
+
 Install (bash): C<< $ cpanm UUID::Generator::PurePerl >>
 
 =item Parallel::ForkManager (CPAN)
+
 Install (bash): C<< $ cpanm Parallel::ForkManager >>
 
 
