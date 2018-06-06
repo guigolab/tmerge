@@ -55,6 +55,15 @@ An extra GTF attribute, C<contains>, consists of a comma-separated list of input
 
 =head1 DESCRIPTION
 
+<tmerge> reduces redundancy in a set of transcriptome read-to-genome alignments. It does so by looking for reads with I<B<compatible>> aligned structures in the input, and merging those into Transcript Models (TMs).
+
+=begin HTML
+
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png" alt="tmerge sketch" /></p>
+
+=end HTML
+
+
 
 =head1 DEPENDENCIES
 
@@ -70,7 +79,7 @@ Install (bash): C<< $ cpanm Parallel::ForkManager >>
 
 =back
 
-(When using C<cpanm> you might have to use the C<--local-lib> option, see documentation.
+(When using C<cpanm> you might have to use the C<--local-lib> option if you don't have admin rights, see documentation.
 
 
 =head1 AUTHOR
