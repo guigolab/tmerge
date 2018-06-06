@@ -43,6 +43,7 @@ C<< tmerge --cpu <number of CPUs> --tmPrefix <custom transcript_id prefix string
 =head2 INPUT
 
 GTF file of read-to-genome alignments, sorted by chromosome and start position.
+
 Only C<exon> records are considered.
 Read alignments need to be uniquely identified with the C<transcript_id> GTF attribute. C<transcript_id> is the only mandatory GTF attribute in input records.
 
@@ -58,12 +59,17 @@ Default: 1
 
 Default: '' (empty string)
 
+By default, output C<transcript_id>s consist in arbitrary "C<TM_XXXXXXXXXXXX>" strings. If C<tmPrefix> is set, its value will prefix all C<transcript_id> strings in the GTF output.
+
 =back
 
 =head2 OUTPUT
 
-C<tmerge> outputs GTF. The output contains a set of transcript models
-chr7    tmerge  exon    98207754        98209634        .       +       .       gene_id "blahTM_000000000007"; transcript_id "blahTM_000000000007"; contains "23aa004d-2eab-42ea-b731-3ebe13820c2e/436f4b3f50a7179009afed1bea7c0a631b23f514,3fa67222-f04e-4932-a69c-7585a142ddb8/436f4b3f50a7179009afed1bea7c0a631b23f514,900811a4-ec46-4bf7-b8ea-5d5fbead752e/436f4b3f50a7179009afed1bea7c0a631b23f514,d086ce93-926e-4ad5-90c8-a8a1844b1832/436f4b3f50a7179009afed1bea7c0a631b23f514,dbb204c8-5b77-4b9c-a37d-6334e4db58f6/436f4b3f50a7179009afed1bea7c0a631b23f514,f7b7c67e-c65e-4014-a4c7-8f784541fd1b/436f4b3f50a7179009afed1bea7c0a631b23f514";
+C<tmerge> outputs non-redudant transcript models (B<TMs>) in GTF format. Each TM entry is uniquely identified by its C<transcript_id> attribute.
+
+The C<gene_id> attribute has the same value as C<transcript_id> by convention; it is therefore meaningless.
+
+An extra GTF attribute, C<contains>, consists of a comma-separated list of input C<transcript_id>s contained in the corresponding TM.
 
 
 =head1 DESCRIPTION
@@ -71,13 +77,16 @@ chr7    tmerge  exon    98207754        98209634        .       +       .       
 
 =head1 DEPENDENCIES
 
-CPAN:
-
 =over
 
-=item UUID::Generator::PurePerl
+=item UUID::Generator::PurePerl (CPAN)
+Install (bash): C<< $ cpanm UUID::Generator::PurePerl >>
 
-=item Parallel::ForkManager
+=item Parallel::ForkManager (CPAN)
+Install (bash): C<< $ cpanm Parallel::ForkManager >>
+
+
+
 
 =back
 
