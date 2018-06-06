@@ -78,7 +78,7 @@ C<tmerge> reduces redundancy in a set of transcriptome read-to-genome alignments
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png" alt="tmerge sketch" /></p>
+<p>blahblah<img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png" alt="tmerge sketch" /></p>
 
 =end HTML
 
@@ -98,7 +98,15 @@ and
 
 =back
 
-does not artificially chain exons
+Condition (2) means that C<tmerge>, contrary to other transcript mergers, will never artificially chain exons in the output:
+
+=begin HTML
+
+<p><img src="https://public-docs.crg.es/rguigo/CLS/img/tmerge_non_merge.png" alt="tmerge sketch" /></p>
+
+=end HTML
+
+
 
 =back
 
