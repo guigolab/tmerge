@@ -82,7 +82,7 @@ C<tmerge> reduces redundancy in a set of transcriptome read-to-genome alignments
 
 =end HTML
 
-Pairwise B<Compatibility> between aligned structures is evaluated using the following rules:
+Pairwise B<compatibility> between aligned structures is evaluated using the following rules:
 
 =over
 
@@ -94,11 +94,11 @@ Pairwise B<Compatibility> between aligned structures is evaluated using the foll
 
 and
 
-=item (2) either their intron chains are equal, or one is an exact subset of the other
+=item (2) either their intron chains are equal, or one is an exact subset of the other.
 
 =back
 
-Condition (2) means that C<tmerge>, contrary to other transcript mergers, will never artificially chain exons in the output:
+Condition (2) means that C<tmerge>, contrary to other transcript mergers, will never artificially extend spliced transcripts:
 
 =begin HTML
 
@@ -106,9 +106,27 @@ Condition (2) means that C<tmerge>, contrary to other transcript mergers, will n
 
 =end HTML
 
+=item If both structures are B<monoexonic>, they are considered compatible if they overlap by at least 1 nucleotide on the same genomic strand.
+
+=item If one structure is B<spliced> and the other B<monoexonic>, they are compatible if:
+
+=over
+
+=item (1) they show exonic overlap on the same genomic strand
+
+and
+
+=item (2) the latter does not overlap any intron of the former.
+
+In other word, a monoexonic read can be included in a spliced transcript only if it doesn't alter its intron chain.
+
+=back
+
 
 
 =back
+
+
 
 =head1 DEPENDENCIES
 
