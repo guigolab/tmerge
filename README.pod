@@ -109,7 +109,7 @@ In other words, a monoexonic read can be included into a spliced transcript only
 
 All pairs of compatible structures are then merged recursively into the longest possible TM.
 
-B<WARNING>: Given the rules above, recursive merging of monoexonic structures into terminal exons of spliced models can lead to cases that one might consider undesirable, like the following:
+B<WARNING>: Given the rules above, recursive merging of monoexonic structures into terminal exons of spliced models can lead to cases like the one highlighted below:
 
 =begin HTML
 
