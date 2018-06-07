@@ -71,11 +71,13 @@ Pairwise B<compatibility> between aligned structures is evaluated using the foll
 
 =over
 
-=item * 1. they show exonic overlap on the same genomic strand
+=item * 1. they show exonic overlap on the same genomic strand,
+
+=item * 2. either their intron chains are equal, or one is an exact subset of the other,
 
 and
 
-=item * 2. either their intron chains are equal, or one is an exact subset of the other.
+=item * 3. there is no overlap between an exon of one structure and an intron of the other.
 
 =back
 
