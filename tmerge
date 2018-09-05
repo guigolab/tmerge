@@ -220,6 +220,7 @@ my %transcript_index=();
 my %transcript_rev_index=();
 while (<GFF>){
 	next if ($_=~/^#/);
+	next unless ($_=~/\texon\t/);
 	if ($_=~/^(\S+)\t(\S+)\t(\S+)\t(\d+)\t(\d+)\t\S+\t(\S+)\t\S+\t.*transcript_id "(\S+)?";/){
 		if ($3 eq "exon"){
 			$nr_exons++;
@@ -405,7 +406,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 	#merge monoexonic reads
 	my @sortedList1= sort ({ ${$transcript_exons{$a}}[0][1] <=> ${$transcript_exons{$b}}[0][1] or ${$transcript_exons{$a}}[0][2] <=> ${$transcript_exons{$b}}[0][2] or $a cmp $b } @list1); #sort transcripts by start position of first exon
 	my @sortedList2=@sortedList1;
-	@list1=();
+	#@list1=();
 
 	foreach my $tr2 (@sortedList2){
 		unless (exists $transcript_introns{$tr2}){ #process only monoexonic reads
@@ -515,7 +516,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 	}
 
 	#print all to GTF
-	foreach my $tr (@sortedList1){
+	foreach my $tr (@list1){
 		if (exists ($container_to_transcripts{$tr})){
 			my @transcriptsList=();
 			push(@transcriptsList, $transcript_index{$tr});
@@ -539,7 +540,7 @@ $process_manager->wait_all_children;
 #print all output:
 foreach my $contig (keys %contig_to_transcripts){
 	my $tmpOut="$tmpdir/$contig.gff";
-	open TMPOUT, "$tmpOut" or die "ERROR: Couldn't read temp output filehandle $tmpOut\n";
+	open TMPOUT, "$tmpOut" or die "ERROR: Couldn't read temp output filehandle $tmpOut, which contains:\n". Dumper $contig_to_transcripts{$contig}."\n";
 	while(<TMPOUT>){
 		print $_;
 	}
