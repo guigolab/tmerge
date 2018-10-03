@@ -6,7 +6,7 @@ tmerge
 
 Merge transcriptome read-to-genome alignments into non-redundant transcript models.
 
-C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models.
+C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models. One notable limitation of the program is that it treats spliced and monoexonic reads separately (i.e. those are never merged together).
 
 =begin HTML
 
