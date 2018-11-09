@@ -87,8 +87,6 @@ and
 
 =back
 
-=back
-
 
 All pairs of compatible structures are then merged recursively into the longest possible TM.
 
@@ -107,7 +105,7 @@ Install (bash): C<< $ cpanm Parallel::ForkManager >>
 
 =back
 
-(When using C<cpanm> you might need to use the C<--local-lib> option if you don't have admin rights, see documentation.
+(When using C<cpanm> you might need to use the C<--local-lib> option if you don't have admin rights, see documentation).
 
 
 =head1 AUTHOR
