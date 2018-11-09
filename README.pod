@@ -6,7 +6,7 @@ tmerge
 
 Merge transcriptome read-to-genome alignments into non-redundant transcript models.
 
-C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models. One notable limitation of the program is that it treats spliced and monoexonic reads separately (i.e. those are never merged together).
+C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models. One notable limitation of the program is that it currently treats spliced and monoexonic reads separately (i.e. those are never merged together).
 
 =begin HTML
 
@@ -73,7 +73,7 @@ Pairwise B<compatibility> between aligned structures is evaluated using the foll
 
 =item * 1. they show exonic overlap on the same genomic strand,
 
-=item * 2. either their intron chains are equal, or one is an exact subset of the other,
+=item * 2. all their introns are compatible,
 
 and
 
@@ -81,28 +81,9 @@ and
 
 =back
 
-Condition (2) means that C<tmerge>, contrary to other transcript mergers, will never artificially extend spliced transcripts:
-
-=begin HTML
-
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_non_merge.png" alt="tmerge non-merge case" /></p>
-
-=end HTML
-
 =item * If both structures are B<monoexonic>, they are considered compatible if they overlap by at least 1 nucleotide on the same genomic strand.
 
-=item * If one structure is B<spliced> and the other B<monoexonic>, they are compatible if:
-
-=over
-
-=item * 1. they show exonic overlap on the same genomic strand
-
-and
-
-=item * 2. the latter does not overlap any intron of the former.
-
-
-In other words, a monoexonic read can be included into a spliced transcript only if it doesn't alter its intron chain.
+=item * If one structure is B<spliced> and the other B<monoexonic>, they are not merged (this may be modified in a future version)
 
 =back
 
@@ -110,16 +91,6 @@ In other words, a monoexonic read can be included into a spliced transcript only
 
 
 All pairs of compatible structures are then merged recursively into the longest possible TM.
-
-B<WARNING>: Given the rules above, recursive merging of monoexonic structures into terminal exons of spliced models can lead to cases like the one highlighted below:
-
-=begin HTML
-
-<p><img src="https://public-docs.crg.es/rguigo/CLS/img/tmerge_terminal_exons.png" alt="tmerge terminal exons" /></p>
-
-=end HTML
-
-
 
 
 =head1 DEPENDENCIES
