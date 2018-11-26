@@ -6,7 +6,7 @@ tmerge
 
 Merge transcriptome read-to-genome alignments into non-redundant transcript models.
 
-C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models. One notable limitation of the program is that it currently treats spliced and monoexonic reads separately (i.e. those are never merged together).
+C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models. The program treats spliced and monoexonic reads separately (i.e., those are never merged together).
 
 =begin HTML
 
@@ -34,13 +34,21 @@ Read alignments need to be uniquely identified with the C<transcript_id> GTF att
 
 =item * C<cpu> (integer) = Number of CPUs to use
 
-Default: 1
+B<Default>: 1
 
 =item * C<tmPrefix> (string) = Prefix string for C<transcript_id> identifiers in the output
 
-Default: '' (empty string)
+B<Default>: '' (empty string)
 
 By default, output C<transcript_id>s consist in arbitrary "C<TM_XXXXXXXXXXXX>" strings. If C<tmPrefix> is set, its value will prefix all C<transcript_id> strings in the GTF output.
+
+=item * C<minReadSupport> (integer) = required minimum number of reads supporting a transcript model.
+
+For B<spliced transcripts>, at least C<minReadSupport> input reads must fully support its entire intron chain for a transcript model to be present in the output.
+
+For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must be merged into a transcript model for it to be present in the output.
+
+B<Default>: 1
 
 =back
 
@@ -71,9 +79,9 @@ Pairwise B<compatibility> between aligned structures is evaluated using the foll
 
 =over
 
-=item * 1. they show exonic overlap on the same genomic strand,
+=item * 1. at least one of their exons overlap on the same genomic strand,
 
-=item * 2. all their introns are compatible,
+=item * 2. either their intron chains are equal, or one is an exact subset of the other,
 
 and
 
@@ -81,9 +89,14 @@ and
 
 =back
 
+Condition (2) means that C<tmerge> will never artificially extend spliced transcripts:
+=begin HTML
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_non_merge.png" alt="tmerge non-merge case" /></p>
+=end HTML
+
 =item * If both structures are B<monoexonic>, they are considered compatible if they overlap by at least 1 nucleotide on the same genomic strand.
 
-=item * If one structure is B<spliced> and the other B<monoexonic>, they are not merged (this may be modified in a future version)
+=item * If one structure is B<spliced> and the other B<monoexonic>, they are not merged.
 
 =back
 
