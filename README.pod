@@ -50,16 +50,16 @@ For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must be m
 
 B<Default>: 1
 
-=item * C<exonIntronOverhangMerge> (integer) = maximum number of nucleotides of exon/intron overhang at a splice site for two transcripts to be considered compatible (i.e., mergeable):
+=item * C<exonOverhangTolerance> (integer) = maximum number of nucleotides of exon/intron overhang at a splice site for two transcripts to be considered compatible (i.e., mergeable):
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonIntronOverhangMerge.png" alt="tmerge exonIntronOverhangMerge sketch" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance.png" alt="tmerge exonOverhangTolerance sketch" /></p>
 
 =end HTML
 
 
-This applies only to terminal exons of a shorter transcript that overlap an intron of a longer one. Setting this option to a positive value can correct mismapped splice junctions that sometimes occur when aligning very short terminal read exons.
+This applies only to terminal exons of a shorter transcript that overlap an intron of a longer one. Setting this option to a positive integer can correct mismapped splice junctions that sometimes occur when aligning very short terminal read exons.
 
 B<Default>: 0 (i.e., no exon/intron overhang allowed)
 
