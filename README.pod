@@ -61,7 +61,7 @@ B<Default>: 1
 
 This applies only to terminal exons of a shorter transcript that overlap an intron of a longer one. Setting this option to a positive value can correct mismapped splice junctions that sometimes occur when aligning very short terminal read exons.
 
-B<Default>: 0 (no exon/intron overhang allowed)
+B<Default>: 0 (i.e., no exon/intron overhang allowed)
 
 
 =back
