@@ -69,6 +69,11 @@ For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must be m
 
 B<Default>: 1
 
+=item * C<exonIntronOverhangMerge> (integer) = allowed number of nucleotides of exon/intron overhang at a splice site for two transcripts to be considered compatible (mergeable). This can correct mismapped splice junctions that sometimes occur when aligning very short terminal read exons.
+
+B<Default>: 0 (no exon/intron overhang allowed)
+
+
 =back
 
 =head2 OUTPUT
@@ -154,9 +159,11 @@ Julien Lagarde, CRG, Barcelona, contact julienlag@gmail.com
 my $tmPrefix='';
 my $cpu=0;
 my $minReadSupport=1;
+my $allowedExonIntronOverhang=0;
 GetOptions ('tmPrefix=s' => \$tmPrefix,
             'cpu=i' => \$cpu,
-            'minReadSupport=i' => \$minReadSupport
+            'minReadSupport=i' => \$minReadSupport,
+            'exonIntronOverhangMerge=i' => \$allowedExonIntronOverhang
             )
 or pod2usage( { -message => "Error in command line arguments",
         		  -exitval => $exit_status  ,
@@ -689,8 +696,8 @@ sub checkIntronExonOverlap{
 				unless ($firstTrAIntronMatchedToTrB ==0) { # if the first intron of trA matched to trB is trA[0], no need to look for upstream introns on trA
 
 					my $intron1=${$transcript_introns{$trA}}[$firstTrAIntronMatchedToTrB-1];
-					my $overlap=overlap(${$intron1}[1], ${$intron1}[2], ${$exon2}[1], ${$exon2}[2]);
-					if($overlap == 1){
+					#my $overlap=overlap(${$intron1}[1], ${$intron1}[2], ${$exon2}[1], ${$exon2}[2]);
+					if( ${$exon2}[1] <= ${$intron1}[2] - $allowedExonIntronOverhang){
 						return 1;
 					}
 				}
@@ -698,8 +705,8 @@ sub checkIntronExonOverlap{
 			elsif($i==1){ #last exon of trB
 				unless ($lastTrAIntronMatchedToTrB == $#{$transcript_introns{$trA}} ){ # if the last intron of trA matched to trB is trA[-1], no need to look for downstream introns on trA
 					my $intron1=${$transcript_introns{$trA}}[$lastTrAIntronMatchedToTrB+1];
-					my $overlap=overlap(${$intron1}[1], ${$intron1}[2], ${$exon2}[1], ${$exon2}[2]);
-					if($overlap == 1){
+					#my $overlap=overlap(${$intron1}[1], ${$intron1}[2], ${$exon2}[1], ${$exon2}[2]);
+					if(${$exon2}[2] >= ${$intron1}[1] + $allowedExonIntronOverhang){
 						return 1;
 					}
 				}
