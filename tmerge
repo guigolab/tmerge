@@ -109,8 +109,11 @@ and
 =back
 
 Condition (2) means that C<tmerge> will never artificially extend spliced transcripts:
+
 =begin HTML
+
 <p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_non_merge.png" alt="tmerge non-merge case" /></p>
+
 =end HTML
 
 =item * If both structures are B<monoexonic>, they are considered compatible if they overlap by at least 1 nucleotide on the same genomic strand.
