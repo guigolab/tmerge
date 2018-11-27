@@ -119,7 +119,7 @@ Setting this option to a positive integer can correct mismapped splice junctions
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_FalseExonOverhang.300dpi.png" alt="tmerge exonOverhangTolerance sketch" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_FalseExonOverhang.300dpi.png" alt="tmerge FalseExonOverhang sketch" /></p>
 
 =end HTML
 
@@ -127,7 +127,7 @@ This option only affects the terminal exons of a shorter transcript that overlap
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance_2.png" alt="tmerge exonOverhangTolerance sketch" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance.300dpi.png" alt="tmerge exonOverhangTolerance sketch" /></p>
 
 =end HTML
 
