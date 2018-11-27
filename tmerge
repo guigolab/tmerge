@@ -372,7 +372,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 	@list1Spliced=();
 	NEXTTR1: for (my $k=0; $k<=$#sortedList1Spliced; $k++){
 		my $tr1=$sortedList1Spliced[$k];
-
+#		print STDERR "tr1 $transcript_index{$tr1}\n";
 		if(exists ($transcript_to_container{$tr1})){
 			$tr1=$transcript_to_container{$tr1};
 			#print STDERR "tr1 IS CONTAINED in $transcript_index{$tr1}\n";
@@ -380,11 +380,13 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 
 		NEXTTR2: for (my $l=$k+1; $l<=$#sortedList1Spliced; $l++){
 			my $tr2=$sortedList1Spliced[$l];
+#			print STDERR " tr2 $transcript_index{$tr2}\n";
+
 		#print STDERR "SPLICED tr1 $transcript_index{$tr1} tr2 $transcript_index{$tr2}\n";
 			if(exists ($transcript_to_container{$tr2})){
 				#$tr2=$transcript_to_container{$tr2};
 				#print STDERR "tr2 IS CONTAINED in $transcript_index{$tr2}\n";
-		#		print STDERR "NO 1\n";
+#				print STDERR "NO 1\n";
 				next NEXTTR2;
 			}
 			my $tr1IntronChainId=makeIntronChainId(\@{$transcript_introns{$tr1}});
@@ -393,7 +395,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 				$container_to_transcripts{$tr1}{$tr2}=undef ;
 				$transcript_to_container{$tr2}=$tr1;
 				adjustContainerEnds($tr1,$tr2);
-		#		print STDERR "MATCH 1\n";
+#				print STDERR "MATCH 1\n";
 				next NEXTTR2
 			}
 			my $overlapTranscripts=overlap(${$transcript_exons{$tr1}}[0][1],${$transcript_exons{$tr1}}[-1][2],${$transcript_exons{$tr2}}[0][1],${$transcript_exons{$tr2}}[-1][2]);  #check that tr1 and tr2 are on the same strand and overlap
@@ -408,10 +410,10 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 					#print STDERR "SPLICED tr2 $transcript_index{$tr2} vs tr1 $transcript_index{$tr1}\n";
 					for (my $j=0; $j <= $#{$transcript_introns{$tr2}}; $j++){
 						my $intronTr2=${$transcript_introns{$tr2}}[$j];
-		#				print STDERR " intronTr2 #$j: ${$intronTr2}[1], ${$intronTr2}[2]\n";
+#						print STDERR " intronTr2 #$j: ${$intronTr2}[1], ${$intronTr2}[2]\n";
 						for (my $i=$intronTr1Index; $i<= $#{$transcript_introns{$tr1}}; $i++){
 							my $intronTr1= ${$transcript_introns{$tr1}}[$i];
-		#					print STDERR "  intronTr1 #$i: ${$intronTr1}[1], ${$intronTr1}[2]\n";
+#							print STDERR "  intronTr1 #$i: ${$intronTr1}[1], ${$intronTr1}[2]\n";
 							my $overlap=overlap(${$intronTr1}[1], ${$intronTr1}[2], ${$intronTr2}[1], ${$intronTr2}[2]);
 							#print STDERR "  overlap $overlap\n";
 							if($overlap == 1){
@@ -424,7 +426,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 										$lastTr1IntronMatchedToTr2=$i;
 									}
 									$intronTr1Index=$i+1; #skip directly to next $tr1 intron at the next round (next $tr2 intron)
-									if($intronTr1Index > $#{$transcript_introns{$tr1}} && $j < $#{$transcript_introns{$tr2}} && ${$transcript_exons{$tr1}}[0][1] == ${$transcript_exons{$tr2}}[0][1]){ #we've reached the last intron of tr1. Transfer remaining exons of tr2 to tr1, if they're compatible
+									if($intronTr1Index > $#{$transcript_introns{$tr1}} && $j < $#{$transcript_introns{$tr2}} && ${$transcript_exons{$tr1}}[0][1] == ${$transcript_exons{$tr2}}[0][1] && ${$transcript_introns{$tr2}}[$j+1][1] >= ${$transcript_exons{$tr1}}[-1][2] ){ #we've reached the last intron of tr1. Transfer remaining exons of tr2 to tr1, if they're compatible
 										$lastTr1IntronMatchedToTr2=$i;
 		#								print STDERR "##a $firstTr1IntronMatchedToTr2 $lastTr1IntronMatchedToTr2\n";
 										if(checkIntronExonOverlap($tr1,$tr2,$firstTr1IntronMatchedToTr2,$lastTr1IntronMatchedToTr2) ==0){
@@ -433,19 +435,19 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 											$transcript_to_container{$tr2}=$tr1;
 											transferRightExonsIntrons($tr1,$tr2,$j);
 											adjustContainerEnds($tr1,$tr2);
-		#									print STDERR "MATCH 2\n";
+#											print STDERR "MATCH 2\n";
 											next NEXTTR2
 
 										}
 										else{
-		#									print STDERR "NO 2\n";
+#											print STDERR "NO 2\n";
 											next NEXTTR2;
 										}
 									}
 							 		last;
 								}
 								else{ # introns overlap but don't exactly match, give up current tr2
-									#print STDERR "NO 3\n";
+#									print STDERR "NO 3\n";
 									next NEXTTR2;
 								}
 							}
@@ -457,28 +459,28 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 										$container_to_transcripts{$tr1}{$tr2}=undef ;
 										$transcript_to_container{$tr2}=$tr1;
 										adjustContainerEnds($tr1,$tr2);
-									#	print STDERR "MATCH 3\n";
+#										print STDERR "MATCH 3\n";
 										next NEXTTR2;
 									}
 									else{
-									#	print STDERR "NO 4\n";
+#										print STDERR "NO 4\n";
 										next NEXTTR2;
 									}
 								}
 								else{
 									if($i==0 && $j==0){ #first intron of tr1 is downstream of first intron of tr2. Since transcripts are sorted by position of first intron, we can skip the rest of the tr2 list
-									#	print STDERR "NO 5\n";
+#										print STDERR "NO 5\n";
 										next NEXTTR1;
 									}
 									else{
-									#	print STDERR "NO 6\n";
+#										print STDERR "NO 6\n";
 										next NEXTTR2;
 									}
 								}
 							}
 							elsif($overlap == -2){ #intron1 is upstream of intron2
 								if($i == $#{$transcript_introns{$tr1}}){ #last intron of tr1 is upstream of first intron of tr2, i.e. tr1 and tr2 are incompatible
-									#print STDERR "NO 7\n";
+#									print STDERR "NO 7\n";
 									next NEXTTR2;
 								}
 
@@ -492,7 +494,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 							$container_to_transcripts{$tr1}{$tr2}=undef ;
 							$transcript_to_container{$tr2}=$tr1;
 							adjustContainerEnds($tr1,$tr2);
-							#print STDERR "MATCH 4\n";
+#							print STDERR "MATCH 4\n";
 							next NEXTTR2
 						}
 					}
@@ -501,7 +503,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 			}
 
 			elsif($overlapTranscripts == -2){ #tr2 is downstream of tr1. Since trs are sorted by start position, we can safely skip to next tr1
-				#print STDERR "NO 8\n";
+#				print STDERR "NO 8\n";
 				next NEXTTR1;
 			}
 
@@ -609,10 +611,15 @@ foreach my $contig (keys %contig_to_transcripts){
 	}
 }
 
-# if(%errorRecoveringContigGff){
-# 	die "ERROR: Couldn't read temp output filehandles for contigs (all corresponding transcripts are missing from output):\n".join(", ", keys %errorRecoveringContigGff);
+if(%errorRecoveringContigGff){
+ 	print STDERR "No data output for contig(s):\n";
+ 	foreach my $contig (keys %errorRecoveringContigGff){
+ 		foreach my $tr (@{$contig_to_transcripts{$contig}}){
+ 			print STDERR "Contig: $contig Transcript: $transcript_id_index{$tr}\n";
+ 		}
+ 	}
 
-# }
+}
 print STDERR "Done.\n";
 
 
