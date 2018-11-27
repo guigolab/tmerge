@@ -50,16 +50,8 @@ For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must be m
 
 B<Default>: 1
 
-=item * C<exonOverhangTolerance> (integer) = maximum number of nucleotides of exon/intron overhang at a splice site for two transcripts to be considered compatible (i.e., mergeable):
+=item * C<exonOverhangTolerance> (integer) = maximum number of nucleotides of exon/intron overhang at a splice site for two transcripts to be considered compatible (i.e., mergeable). See explanation in "DESCRIPTION" below.
 
-=begin HTML
-
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance_2.png" alt="tmerge exonOverhangTolerance sketch" /></p>
-
-=end HTML
-
-
-This applies only to terminal exons of a shorter transcript that overlap an intron of a longer one. Setting this option to a positive integer can correct mismapped splice junctions that sometimes occur when aligning very short terminal read exons.
 
 B<Default>: 0 (i.e., no exon/intron overhang allowed)
 
@@ -119,6 +111,27 @@ Condition (2) means that C<tmerge> will never artificially extend spliced transc
 
 
 All pairs of compatible structures are then merged recursively into the longest possible TM.
+
+=head2 The C<exonOverhangTolerance> option
+
+Setting this option to a positive integer can correct mismapped splice junctions that sometimes occur when aligning very short, error-rich terminal read exons:
+
+
+=begin HTML
+
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_FalseExonOverhang.300dpi.png" alt="tmerge exonOverhangTolerance sketch" /></p>
+
+=end HTML
+
+This option only affects the terminal exons of a shorter transcript that overlap an intron of a longer one. The setting works as explained below:
+
+=begin HTML
+
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance_2.png" alt="tmerge exonOverhangTolerance sketch" /></p>
+
+=end HTML
+
+
 
 
 =head1 DEPENDENCIES
