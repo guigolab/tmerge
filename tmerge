@@ -415,7 +415,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 							my $intronTr1= ${$transcript_introns{$tr1}}[$i];
 #							print STDERR "  intronTr1 #$i: ${$intronTr1}[1], ${$intronTr1}[2]\n";
 							my $overlap=overlap(${$intronTr1}[1], ${$intronTr1}[2], ${$intronTr2}[1], ${$intronTr2}[2]);
-							#print STDERR "  overlap $overlap\n";
+#							print STDERR "  overlap $overlap\n";
 							if($overlap == 1){
 								if(${$intronTr2}[1] == ${$intronTr1}[1] && ${$intronTr2}[2] == ${$intronTr1}[2]){
 									$countIntronsTr2MatchedToTr1++;
@@ -479,7 +479,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 								}
 							}
 							elsif($overlap == -2){ #intron1 is upstream of intron2
-								if($i == $#{$transcript_introns{$tr1}}){ #last intron of tr1 is upstream of first intron of tr2, i.e. tr1 and tr2 are incompatible
+								if($i == $#{$transcript_introns{$tr1}} || $j > 0 ){ #last intron of tr1 is upstream of first intron of tr2, i.e. tr1 and tr2 are incompatible
 #									print STDERR "NO 7\n";
 									next NEXTTR2;
 								}
