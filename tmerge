@@ -333,7 +333,8 @@ my %transcript_introns=();
 my $containerNumber=0;
 
 my $countContigs=0;
-CONTIGS: foreach my $contig (keys %contig_to_transcripts){
+CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> scalar(@{$contig_to_transcripts{$a}}) } keys %contig_to_transcripts){ #sort contigs by size so we start with the biggest ones (useful if cpus>1)
+	print STDERR "Contig $contig size ".scalar(@{$contig_to_transcripts{$contig}})."\n";
 	$countContigs++;
 	$process_manager->start and next CONTIGS;
 	#print STDERR "CONTIG: $contig\n";
