@@ -334,10 +334,10 @@ my $containerNumber=0;
 
 my $countContigs=0;
 CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> scalar(@{$contig_to_transcripts{$a}}) } keys %contig_to_transcripts){ #sort contigs by size so we start with the biggest ones (useful if cpus>1)
-	print STDERR "Contig $contig size ".scalar(@{$contig_to_transcripts{$contig}})."\n";
 	$countContigs++;
 	$process_manager->start and next CONTIGS;
 	#print STDERR "CONTIG: $contig\n";
+	print STDERR "Processing contig $contig (contains ".scalar(@{$contig_to_transcripts{$contig}})." transcripts)\n";
 	my %intronChainCounts=();
 	my %container_to_transcripts=(); #'value' is a subset of , or equal to, 'key''s intron chain. If the reciprocal is found (i.e. both 'A' => 'B' and 'B' => 'A' exist, then A and B have the exact same intron chain.
 	my %transcript_to_container=();
