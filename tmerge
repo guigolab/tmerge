@@ -61,29 +61,45 @@ B<Default>: '' (empty string)
 
 By default, output C<transcript_id>s consist in arbitrary "C<TM_XXXXXXXXXXXX>" strings. If C<tmPrefix> is set, its value will prefix all C<transcript_id> strings in the GTF output.
 
-=item * C<minReadSupport> (integer) = required minimum number of reads supporting a transcript model.
+=item * C<minReadSupport> (integer) = required minimum number of reads supporting a transcript model. When building a transcript model, only the reads fulfilling the following conditions are considered:
 
-For B<spliced transcripts>, at least C<minReadSupport> input reads must fully support its entire intron chain for a transcript model to be present in the output.
+For B<spliced transcripts>, at least C<minReadSupport> input reads must share a given intron chain and 5' + 3' ends (+/- C<exonOverhangTolerance>, see below).
 
-For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must be merged into a transcript model for it to be present in the output.
+For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must share their 5' + 3' ends (+/- C<exonOverhangTolerance>, see below). In other words, when C<exonOverhangTolerance> C< = 0> (the default), only monoexonic reads with identical genome coordinates are merged.
 
 B<Default>: 1
 
-=item * C<exonOverhangTolerance> (integer) = maximum number of nucleotides of exon/intron overhang at a splice site for two transcripts to be considered compatible (i.e., mergeable). See explanation in "DESCRIPTION" below.
+=item * C<exonOverhangTolerance> (integer) = maximum number of nucleotides of terminal exon overhang allowed during the merging of input reads. More specifically, the value of C<exonOverhangTolerance> affects the following aspects of merging:
+
+=over
+
+=item * Tolerated overhang ("fuzziness") of 5' and 3' ends when calculating read support (see C<minReadSupport> option above)
+
+=item * Tolerated overhang of the terminal exon of a shorter read over the splice site of a longer one. See explanation in "DESCRIPTION" below.
 
 
-B<Default>: 0 (i.e., no exon/intron overhang allowed)
 
+=back
+
+B<Default>: 0 (i.e., no exon overhang allowed)
 
 =back
 
 =head2 OUTPUT
 
-C<tmerge> outputs non-redundant transcript models (B<TMs>) in GTF format. Each TM entry is uniquely identified by its C<transcript_id> attribute.
+C<tmerge> outputs non-redundant transcript models (B<TMs>) in GTF format. Each TM entry is uniquely identified by its (arbitrary) C<transcript_id> attribute.
 
 The C<gene_id> attribute has the same value as C<transcript_id> by convention; it is therefore meaningless.
 
-An extra GTF attribute, C<contains>, consists of a comma-separated list of input C<transcript_id>s contained in the corresponding TM.
+Two extra GTF attributes are present:
+
+=over
+
+=item * C<contains>: comma-separated list of input reads (C<transcript_id>s) contained in the corresponding TM, sorted by descending genomic size.
+
+=item * C<longest>: comma separated list of the longest read(s) (C<transcript_id>s) contained in the corresponding TM. This list contains more that one item only in case of length ties. Note that the reads reported do not necessarily cover the entire length of the resulting TM.
+
+=back
 
 
 =head1 DESCRIPTION
@@ -131,7 +147,7 @@ Condition (2) means that C<tmerge> will never artificially extend spliced transc
 
 All pairs of compatible structures are then merged recursively into the longest possible TM.
 
-=head2 The C<exonOverhangTolerance> option
+=head2 C<exonOverhangTolerance> option and splice sites
 
 Setting this option to a positive integer can correct mismapped splice junctions that sometimes occur when aligning very short, error-rich terminal read exons:
 
@@ -150,7 +166,7 @@ This option only affects the terminal exons of a shorter transcript that overlap
 
 =end HTML
 
-
+B<WARNING>: this option also affects how read support is calculated (see OPTIONS above)
 
 
 =head1 DEPENDENCIES
@@ -181,11 +197,11 @@ Julien Lagarde, CRG, Barcelona, contact julienlag@gmail.com
 my $tmPrefix='';
 my $cpu=0;
 my $minReadSupport=1;
-my $allowedExonIntronOverhang=0;
+my $exonOverhangTolerance=0;
 GetOptions ('tmPrefix=s' => \$tmPrefix,
             'cpu=i' => \$cpu,
             'minReadSupport=i' => \$minReadSupport,
-            'exonOverhangTolerance=i' => \$allowedExonIntronOverhang
+            'exonOverhangTolerance=i' => \$exonOverhangTolerance
             )
 or pod2usage( { -message => "Error in command line arguments",
         		  -exitval => $exit_status  ,
@@ -205,8 +221,22 @@ my $tmpdir="/tmp/";
 if(exists $ENV{'TMPDIR'}){
 	$tmpdir=$ENV{'TMPDIR'};
 }
-print STDERR "Using TMP DIR: $tmpdir (edit the TMPDIR environment variable to change that)\n";
-print STDERR "Minimum read support required per merged transcript model: $minReadSupport\n";
+print STDERR "######################################################################################################################
+######################################################################################################################
+##
+";
+
+print STDERR "##    Parameters/environment information:\n";
+print STDERR "##\n";
+print STDERR "##    - Using TMP DIR: $tmpdir (edit the TMPDIR environment variable to change that)\n";
+print STDERR "##    - Minimum read support required per merged transcript model: $minReadSupport\n";
+print STDERR "##    - Exon overhang tolerance when merging: $exonOverhangTolerance bases\n";
+print STDERR "##    - Will use $cpu CPUs\n";
+print STDERR "##\n";
+print STDERR "######################################################################################################################
+######################################################################################################################
+";
+
 my $process_manager = Parallel::ForkManager->new($cpu);
 
 my $sortedGff;
@@ -325,7 +355,8 @@ foreach my $tr (keys %transcript_id_to_locus_id){
 	push(@{$contig_to_transcripts{$contig}}, $tr);
 }
 %transcript_id_to_locus_id=();
-print STDERR "Done\n";
+my $nrContigs=scalar(keys %contig_to_transcripts);
+print STDERR "Done. Built $nrContigs contigs.\n";
 
 print STDERR "Comparing transcript structures...\n";
 my $countTranscripts2=0;
@@ -335,10 +366,11 @@ my $containerNumber=0;
 my $countContigs=0;
 CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> scalar(@{$contig_to_transcripts{$a}}) } keys %contig_to_transcripts){ #sort contigs by size so we start with the biggest ones (useful if cpus>1)
 	$countContigs++;
+	#print STDERR "Processing contig $contig (contains ".scalar(@{$contig_to_transcripts{$contig}})." transcripts)\n";
 	$process_manager->start and next CONTIGS;
 	#print STDERR "CONTIG: $contig\n";
-	print STDERR "Processing contig $contig (contains ".scalar(@{$contig_to_transcripts{$contig}})." transcripts)\n";
-	my %intronChainCounts=();
+
+	my %intronChainToTranscripts=();
 	my %container_to_transcripts=(); #'value' is a subset of , or equal to, 'key''s intron chain. If the reciprocal is found (i.e. both 'A' => 'B' and 'B' => 'A' exist, then A and B have the exact same intron chain.
 	my %transcript_to_container=();
 	my @list1=@{$contig_to_transcripts{$contig}};
@@ -356,19 +388,57 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 		}
 		if (exists $transcript_introns{$tr}){
 			my $intronChainId=makeIntronChainId(\@{$transcript_introns{$tr}});
-			$intronChainCounts{$intronChainId}++;
+			push(@{$intronChainToTranscripts{$intronChainId}}, $tr);
 
 		}
 	}
-	foreach my $tr (@list1){
-		if(exists ($transcript_introns{$tr})){
-			my $trIntronChainId=makeIntronChainId(\@{$transcript_introns{$tr}});
-			if($intronChainCounts{$trIntronChainId}>=$minReadSupport){
-				push(@list1Spliced, $tr);
+	if($minReadSupport>1){
+		foreach my $tr1 (@list1){
+	#		print STDERR "$transcript_index{$tr1} \n";
+			if(exists ($transcript_introns{$tr1})){
+				my $supportCount=0;
+				my $trIntronChainId=makeIntronChainId(\@{$transcript_introns{$tr1}});
+				if($#{$intronChainToTranscripts{$trIntronChainId}} +1 >=$minReadSupport){
+	#				print STDERR "PASSED intron chain support\n";
+					foreach my $tr2(@{$intronChainToTranscripts{$trIntronChainId}}){
+	#					print STDERR " $transcript_index{$tr2} \n";
+
+						if( (${$transcript_exons{$tr2}}[0][1] >= ${$transcript_exons{$tr1}}[0][1] - $exonOverhangTolerance
+						      &&
+						      ${$transcript_exons{$tr2}}[0][1] <= ${$transcript_exons{$tr1}}[0][1] + $exonOverhangTolerance)
+						      &&
+						      (${$transcript_exons{$tr2}}[-1][2] >= ${$transcript_exons{$tr1}}[-1][2] - $exonOverhangTolerance
+						      &&
+						      ${$transcript_exons{$tr2}}[-1][2] <= ${$transcript_exons{$tr1}}[-1][2] + $exonOverhangTolerance) ) {
+	#						print STDERR "  MATCH\n";
+							$supportCount++;
+
+						}
+						else{
+
+	#						print STDERR "  NOMATCH\n";
+						}
+					}
+				}
+	#			print STDERR "$transcript_index{$tr1} support $supportCount\n";
+				if($supportCount>=$minReadSupport){
+	#				print STDERR "OK list1Spliced\n";
+					push(@list1Spliced, $tr1);
+				}
+
+			}
+
+		}
+	}
+	else{
+		foreach my $tr1 (@list1){
+	#		print STDERR "$transcript_index{$tr1} \n";
+			if(exists ($transcript_introns{$tr1})){
+				push(@list1Spliced, $tr1);
 			}
 		}
 	}
-
+	%intronChainToTranscripts=();
 	my @sortedList1Spliced= sort ({ ${$transcript_introns{$a}}[0][1] <=> ${$transcript_introns{$b}}[0][1] or ${$transcript_exons{$a}}[0][1] <=> ${$transcript_exons{$b}}[0][1] or ${$transcript_exons{$b}}[-1][2] <=> ${$transcript_exons{$a}}[-1][2] or $a cmp $b } @list1Spliced); #sort spliced transcripts by position of first intron. second and third comparisons are necessary so the script is deterministic (otherwise ties are handled randomly)
 	@list1Spliced=();
 	NEXTTR1: for (my $k=0; $k<=$#sortedList1Spliced; $k++){
@@ -511,15 +581,57 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 		}
 	}
 	my @list1Mono=();
+	my @list1MonoSupported=();
 	#merge monoexonic reads
 	foreach my $tr1 (@list1){
 		unless(exists($transcript_introns{$tr1})){
 			push(@list1Mono, $tr1);
 		}
 	}
-
-	my @sortedList1Mono= sort ({ ${$transcript_exons{$a}}[0][1] <=> ${$transcript_exons{$b}}[0][1] or ${$transcript_exons{$a}}[0][2] <=> ${$transcript_exons{$b}}[0][2] or $a cmp $b } @list1Mono); #sort transcripts by start position of first exon
+	my @list1MonoSorted=sort { ${$transcript_exons{$a}}[0][1] <=> ${$transcript_exons{$b}}[0][1] or ${$transcript_exons{$a}}[0][2] <=> ${$transcript_exons{$b}}[0][2] } @list1Mono;
 	@list1Mono=();
+	if($minReadSupport>1){
+		NEXTTR1: foreach my $tr1 (@list1MonoSorted) {
+			my $supportCount=0;
+			#print STDERR "$transcript_index{$tr1} list1MonoSupported?\n";
+			NEXTTR2: foreach my $tr2 (@list1MonoSorted){
+			#	print STDERR " $transcript_index{$tr2}\n";
+				if( $transcript_strand{$tr1} == $transcript_strand{$tr2}){
+					my $overlap=overlap(${$transcript_exons{$tr1}}[0][1],${$transcript_exons{$tr1}}[0][2],${$transcript_exons{$tr2}}[0][1],${$transcript_exons{$tr2}}[0][2]);
+					if($overlap ==1 && (${$transcript_exons{$tr2}}[0][1] >= ${$transcript_exons{$tr1}}[0][1] - $exonOverhangTolerance
+					      &&
+					      ${$transcript_exons{$tr2}}[0][1] <= ${$transcript_exons{$tr1}}[0][1] + $exonOverhangTolerance)
+					      &&
+					      (${$transcript_exons{$tr2}}[-1][2] >= ${$transcript_exons{$tr1}}[-1][2] - $exonOverhangTolerance
+					      &&
+					      ${$transcript_exons{$tr2}}[-1][2] <= ${$transcript_exons{$tr1}}[-1][2] + $exonOverhangTolerance) ) {
+						$supportCount++;
+			#			print STDERR " support $supportCount\n";
+					}
+					elsif($overlap == -2){ #tr2 downstream of tr1. Since transcripts are sorted by position we can skip to next tr1
+						if($supportCount>=$minReadSupport){
+			#				print STDERR "OK list1MonoSupported\n";
+							push(@list1MonoSupported, $tr1);
+						}
+						next NEXTTR1;
+					}
+				}
+
+			}
+			if($supportCount>=$minReadSupport){
+			#	print STDERR "OK list1MonoSupported\n";
+				push(@list1MonoSupported, $tr1);
+			}
+
+		}
+	}
+	else{
+		@list1MonoSupported=@list1MonoSorted;
+	}
+
+	my @sortedList1Mono=@list1MonoSupported; #sort transcripts by start position of first exon
+	@list1MonoSupported=();
+
 	NEXTTR1: for (my $k=0; $k<=$#sortedList1Mono; $k++){
 		my $tr1=$sortedList1Mono[$k];
 		if(exists ($transcript_to_container{$tr1})){
@@ -528,6 +640,12 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 		}
 		NEXTTR2: for (my $l=$k+1; $l<=$#sortedList1Mono; $l++){
 			my $tr2=$sortedList1Mono[$l];
+			if(exists ($transcript_to_container{$tr2})){
+				#$tr2=$transcript_to_container{$tr2};
+				#print STDERR "tr2 IS CONTAINED in $transcript_index{$tr2}\n";
+#				print STDERR "NO 1\n";
+				next NEXTTR2;
+			}
 			if( $transcript_strand{$tr1} == $transcript_strand{$tr2}){
 				#print STDERR "MONO $transcript_index{$tr2} vs $transcript_index{$tr1}\n";
 				my $overlap=overlap(${$transcript_exons{$tr1}}[0][1],${$transcript_exons{$tr1}}[0][2],${$transcript_exons{$tr2}}[0][1],${$transcript_exons{$tr2}}[0][2]);
@@ -550,45 +668,74 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 	#print all to GTF
 	foreach my $tr (@sortedList1Spliced){
 		if (exists ($container_to_transcripts{$tr})){ # i.e. if tr is a container
-			my @transcriptsList=();
-			push(@transcriptsList, $transcript_index{$tr});
-			foreach my $tr2 (keys %{$container_to_transcripts{$tr}}){
-				push(@transcriptsList, $transcript_index{$tr2});
+			my @trList= sort { ${$transcript_exons{$b}}[-1][2] - ${$transcript_exons{$b}}[0][1] <=> ${$transcript_exons{$a}}[-1][2] - ${$transcript_exons{$a}}[0][1] } (keys (%{$container_to_transcripts{$tr}}), $tr); # sort by genomic length
+			my @longest=();
+			my $longestTMlength=0;
+			#push(@transcriptsList, $transcript_index{$tr});
+			for (my $i=0;$i<=$#trList;$i++){
+				my $t=$trList[$i];
+				if($i==0){
+					$longestTMlength=${$transcript_exons{$t}}[-1][2] - ${$transcript_exons{$t}}[0][1];
+				}
+				if(${$transcript_exons{$t}}[-1][2] - ${$transcript_exons{$t}}[0][1] == $longestTMlength){
+					push(@longest, $transcript_index{$t});
+				}
 			}
-			my @sortedList=sort(@transcriptsList);
-			printGTF($tr, join(",", @sortedList), $contig);
+#			foreach my $tr2 (sort { ${$transcript_exons{$b}}[-1][2] - ${$transcript_exons{$b}}[0][1] <=> ${$transcript_exons{$a}}[-1][2] - ${$transcript_exons{$a}}[0][1] } (keys (%{$container_to_transcripts{$tr}}), $tr) ){  # sort by genomic length
+#				push(@transcriptsList, $transcript_index{$tr2});
+#				if(${$transcript_exons{$tr2}}[-1][2] - ${$transcript_exons{$tr2}}[0][1] > $longestTM){
+
+#				}
+
+			#my @sortedList=sort(@transcriptsList);
+			my @transcriptsList=();
+			foreach my $t (@trList){
+				push(@transcriptsList, $transcript_index{$t})
+			}
+			printGTF($tr, join(",", @transcriptsList), join(",", @longest), $contig);
+#			printGTF($tr, join(",", @sortedList), $contig);
 		}
 		else{ #tr is not a container
 			unless(exists ($transcript_to_container{$tr})) { # i.e. if tr is not a container, and is not contained
-				printGTF($tr, $transcript_index{$tr}, $contig);
+				printGTF($tr, $transcript_index{$tr}, $transcript_index{$tr}, $contig);
 			}
-			else{ #i.e. if tr is not a container, but is contained
+			#else{ #i.e. if tr is not a container, but is contained
 				#print STDERR "ERROR: transcript $tr ($transcript_index{$tr}) in contig $contig not printed in output.\n"
-			}
+			#}
 		}
 	}
 
 	foreach my $tr (@sortedList1Mono){
 		if (exists ($container_to_transcripts{$tr})){ # i.e. if tr is a container
-			my @transcriptsList=();
-			push(@transcriptsList, $transcript_index{$tr});
-			foreach my $tr2 (keys %{$container_to_transcripts{$tr}}){
-				push(@transcriptsList, $transcript_index{$tr2});
+			my @trList= sort { ${$transcript_exons{$b}}[-1][2] - ${$transcript_exons{$b}}[0][1] <=> ${$transcript_exons{$a}}[-1][2] - ${$transcript_exons{$a}}[0][1] } (keys (%{$container_to_transcripts{$tr}}), $tr); # sort by genomic length
+			if ($#trList>=$minReadSupport-1){
+				my @longest=();
+				my $longestTMlength=0;
+				for (my $i=0;$i<=$#trList;$i++){
+					my $t=$trList[$i];
+					if($i==0){
+						$longestTMlength=${$transcript_exons{$t}}[-1][2] - ${$transcript_exons{$t}}[0][1];
+					}
+					if(${$transcript_exons{$t}}[-1][2] - ${$transcript_exons{$t}}[0][1] == $longestTMlength){
+						push(@longest, $transcript_index{$t});
+					}
+				}
+				my @transcriptsList=();
+				foreach my $t (@trList){
+					push(@transcriptsList, $transcript_index{$t})
+				}
+				printGTF($tr, join(",", @transcriptsList), join(",", @longest), $contig);
 			}
-			if($#transcriptsList>=$minReadSupport-1){
-				my @sortedList=sort(@transcriptsList);
-				printGTF($tr, join(",", @sortedList), $contig);
 
-			}
 		}
 		elsif($minReadSupport<2){ #tr is not a container
 			unless(exists ($transcript_to_container{$tr})) { # i.e. if tr is not a container, and is not contained
-				printGTF($tr, $transcript_index{$tr}, $contig);
+				printGTF($tr, $transcript_index{$tr}, $transcript_index{$tr}, $contig);
 
 			}
-			else{ #i.e. if tr is not a container, but is contained
+			#else{ #i.e. if tr is not a container, but is contained
 				#print STDERR "ERROR: transcript $tr ($transcript_index{$tr}) in contig $contig not printed in output.\n"
-			}
+			#}
 		}
 	}
 
@@ -681,7 +828,8 @@ sub buildContig{
 sub printGTF{
 	my $transcript_id=$_[0];
 	my $contains=$_[1];
-	my $contig=$_[2];
+	my $longest=$_[2];
+	my $contig=$_[3];
 	my $fileOut="$tmpdir/$contig.gff";
 	open TMPOUT, ">>$fileOut" or die "ERROR: Couldn't open temp output filehandle $fileOut\n";
 	foreach my $exon (@{$transcript_exons{$transcript_id}}){
@@ -699,13 +847,13 @@ sub printGTF{
 			die;
 		}
 		my $tmId=makeTmId($transcript_id);
-		print TMPOUT "${$exon}[0]\ttmerge\texon\t${$exon}[1]\t${$exon}[2]\t.\t$strand\t.\tgene_id \"$tmId\"; transcript_id \"$tmId\"; contains \"$contains\";\n";
+		print TMPOUT "${$exon}[0]\ttmerge\texon\t${$exon}[1]\t${$exon}[2]\t.\t$strand\t.\tgene_id \"$tmId\"; transcript_id \"$tmId\"; contains \"$contains\"; longest \"$longest\";\n";
 	}
 	close TMPOUT;
 }
 
 sub checkIntronExonOverlap{
-#verify that when two A and B transcripts have compatible intron chains, there is no exon/intron overlap
+#verify that when two A and B transcripts have compatible intron chains, there is no terminal exon/intron overlap
 #returns 1 if any overlap found, 0 otherwise
 	my $trA=$_[0];
 	my $trB=$_[1];
@@ -718,7 +866,6 @@ sub checkIntronExonOverlap{
 		die "lastTrAIntronMatchedToTrB is undefined for $transcript_index{$trA} / $transcript_index{$trB}\n";
 
 	}
-	#if(overlap(${$transcript_exons{$trA}}[0][1],${$transcript_exons{$trA}}[$#{$transcript_exons{$trA}}][2],${$transcript_exons{$trB}}[0][1],${$transcript_exons{$trB}}[$#{$transcript_exons{$trB}}][2]) == 1){
 		my @exons2=(${$transcript_exons{$trB}}[0],${$transcript_exons{$trB}}[-1]); #only terminal exons
 		for (my $i=0; $i<=$#exons2;$i++) {
 			my $exon2=$exons2[$i];
@@ -727,7 +874,7 @@ sub checkIntronExonOverlap{
 
 					my $intron1=${$transcript_introns{$trA}}[$firstTrAIntronMatchedToTrB-1];
 					#my $overlap=overlap(${$intron1}[1], ${$intron1}[2], ${$exon2}[1], ${$exon2}[2]);
-					if( ${$exon2}[1] <= ${$intron1}[2] - $allowedExonIntronOverhang){
+					if( ${$exon2}[1] <= ${$intron1}[2] - $exonOverhangTolerance){
 						return 1;
 					}
 				}
@@ -736,7 +883,7 @@ sub checkIntronExonOverlap{
 				unless ($lastTrAIntronMatchedToTrB == $#{$transcript_introns{$trA}} ){ # if the last intron of trA matched to trB is trA[-1], no need to look for downstream introns on trA
 					my $intron1=${$transcript_introns{$trA}}[$lastTrAIntronMatchedToTrB+1];
 					#my $overlap=overlap(${$intron1}[1], ${$intron1}[2], ${$exon2}[1], ${$exon2}[2]);
-					if(${$exon2}[2] >= ${$intron1}[1] + $allowedExonIntronOverhang){
+					if(${$exon2}[2] >= ${$intron1}[1] + $exonOverhangTolerance){
 						return 1;
 					}
 				}
@@ -747,21 +894,6 @@ sub checkIntronExonOverlap{
 
 		}
 
-		# @tmpExons2=@{$transcript_exons{$trA}};
-		# @exons2=@tmpExons2;
-		# foreach my $exon2 (@exons2){
-		# 	foreach my $intron1 (@{$transcript_introns{$trB}}){
-		# 		my $overlap=overlap(${$intron1}[1], ${$intron1}[2], ${$exon2}[1], ${$exon2}[2]);
-		# 		if($overlap == 1){
-		# 			return 1;
-		# 		}
-		# 		elsif($overlap == -1){ # intron1 is downstream of exon2, we can stop and move to next exon2
-		# 			last;
-		# 		}
-		# 	}
-		# }
-
-	#}
 	return 0;
 }
 
@@ -805,3 +937,4 @@ sub transferRightExonsIntrons{
 	}
 
 }
+
