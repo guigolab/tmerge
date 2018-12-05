@@ -1,0 +1,173 @@
+=head1 NAME
+
+tmerge
+
+=head1 SYNOPSIS
+
+Merge transcriptome read-to-genome alignments into non-redundant transcript models.
+
+C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models. The program treats spliced and monoexonic reads separately (i.e., those are never merged together).
+
+=begin HTML
+
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png" alt="tmerge sketch" /></p>
+
+=end HTML
+
+See DESCRIPTION below for more details.
+
+B<Usage example>:
+
+C<< tmerge --cpu <number of CPUs> --tmPrefix <custom transcript_id prefix string for output GTF> <input GTF file> > <output file> >>
+
+
+=head2 INPUT
+
+GTF file of read-to-genome alignments, sorted by chromosome and start position.
+
+Only C<exon> records are considered.
+Read alignments need to be uniquely identified with the C<transcript_id> GTF attribute. C<transcript_id> is the only mandatory GTF attribute in input records.
+
+=head2 OPTIONS
+
+=over
+
+=item * C<cpu> (integer) = Number of CPUs to use
+
+B<Default>: 1
+
+=item * C<tmPrefix> (string) = Prefix string for C<transcript_id> identifiers in the output
+
+B<Default>: '' (empty string)
+
+By default, output C<transcript_id>s consist in arbitrary "C<TM_XXXXXXXXXXXX>" strings. If C<tmPrefix> is set, its value will prefix all C<transcript_id> strings in the GTF output.
+
+=item * C<minReadSupport> (integer) = required minimum number of reads supporting a transcript model. When building a transcript model, only the reads fulfilling the following conditions are considered:
+
+For B<spliced transcripts>, at least C<minReadSupport> input reads must share a given intron chain and 5' + 3' ends (+/- C<exonOverhangTolerance>, see below).
+
+For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must share their 5' + 3' ends (+/- C<exonOverhangTolerance>, see below). In other words, when C<exonOverhangTolerance> C< = 0> (the default), only monoexonic reads with identical genome coordinates are merged.
+
+B<Default>: 1
+
+=item * C<exonOverhangTolerance> (integer) = maximum number of nucleotides of terminal exon overhang allowed during the merging of input reads. More specifically, the value of C<exonOverhangTolerance> affects the following aspects of merging:
+
+=over
+
+=item * Tolerated overhang ("fuzziness") of 5' and 3' ends when calculating read support (see C<minReadSupport> option above)
+
+=item * Tolerated overhang of the terminal exon of a shorter read over the splice site of a longer one. See explanation in "DESCRIPTION" below.
+
+
+
+=back
+
+B<Default>: 0 (i.e., no exon overhang allowed)
+
+=back
+
+=head2 OUTPUT
+
+C<tmerge> outputs non-redundant transcript models (B<TMs>) in GTF format. Each TM entry is uniquely identified by its (arbitrary) C<transcript_id> attribute.
+
+The C<gene_id> attribute has the same value as C<transcript_id> by convention; it is therefore meaningless.
+
+Two extra GTF attributes are present:
+
+=over
+
+=item * C<contains>: comma-separated list of input reads (C<transcript_id>s) contained in the corresponding TM, sorted by descending genomic size.
+
+=item * C<longest>: comma separated list of the longest read(s) (C<transcript_id>s) contained in the corresponding TM. This list contains more that one item only in case of length ties. Note that the reads reported do not necessarily cover the entire length of the resulting TM.
+
+=back
+
+
+=head1 DESCRIPTION
+
+C<tmerge> reduces redundancy in a set of transcriptome read-to-genome alignments. It does so by looking for reads with I<B<compatible>> aligned structures in the input, and merging those into I<B<Transcript Models>> (B<TMs>).
+
+=begin HTML
+
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png" alt="tmerge sketch" /></p>
+
+=end HTML
+
+Pairwise B<compatibility> between aligned structures is evaluated using the following rules:
+
+=over
+
+=item * If both structures are B<spliced>, they are deemed compatible if:
+
+=over
+
+=item * 1. at least one of their exons overlap on the same genomic strand,
+
+=item * 2. either their intron chains are equal, or one is an exact subset of the other,
+
+and
+
+=item * 3. there is no overlap between an exon of one structure and an intron of the other.
+
+=back
+
+Condition (2) means that C<tmerge> will never artificially extend spliced transcripts:
+
+=begin HTML
+
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_non_merge.png" alt="tmerge non-merge case" /></p>
+
+=end HTML
+
+=item * If both structures are B<monoexonic>, they are considered compatible if they overlap by at least 1 nucleotide on the same genomic strand.
+
+=item * If one structure is B<spliced> and the other B<monoexonic>, they are not merged.
+
+=back
+
+
+All pairs of compatible structures are then merged recursively into the longest possible TM.
+
+=head2 C<exonOverhangTolerance> option and splice sites
+
+Setting this option to a positive integer can correct mismapped splice junctions that sometimes occur when aligning very short, error-rich terminal read exons:
+
+
+=begin HTML
+
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_FalseExonOverhang.300dpi.png" alt="tmerge FalseExonOverhang sketch" /></p>
+
+=end HTML
+
+This option only affects the terminal exons of a shorter transcript that overlap an intron of a longer one. The setting works as explained below:
+
+=begin HTML
+
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance.300dpi.png" alt="tmerge exonOverhangTolerance sketch" /></p>
+
+=end HTML
+
+B<WARNING>: this option also affects how read support is calculated (see OPTIONS above)
+
+
+=head1 DEPENDENCIES
+
+=over
+
+=item * UUID::Generator::PurePerl
+
+Install (bash): C<< $ cpanm UUID::Generator::PurePerl >>
+
+=item * Parallel::ForkManager
+
+Install (bash): C<< $ cpanm Parallel::ForkManager >>
+
+=back
+
+(When using C<cpanm> you might need to use the C<--local-lib> option if you don't have admin rights, see documentation).
+
+
+=head1 AUTHOR
+
+Julien Lagarde, CRG, Barcelona, contact julienlag@gmail.com
+
