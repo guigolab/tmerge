@@ -44,9 +44,9 @@ By default, output C<transcript_id>s consist in arbitrary "C<TM_XXXXXXXXXXXX>" s
 
 =item * C<minReadSupport> (integer) = required minimum number of reads supporting a transcript model. When building a transcript model, only the reads fulfilling the following conditions are considered:
 
-For B<spliced transcripts>, at least C<minReadSupport> input reads must share a given intron chain and 5' + 3' ends (+/- C<exonOverhangTolerance>, see below).
+For B<spliced transcripts>, at least C<minReadSupport> input reads must share a given intron chain and 5' + 3' ends (+/- C<exonOverhangTolerance> bases, see below).
 
-For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must share their 5' + 3' ends (+/- C<exonOverhangTolerance>, see below). In other words, when C<exonOverhangTolerance> C< = 0> (the default), only monoexonic reads with identical genome coordinates are merged.
+For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must share their 5' + 3' ends (+/- C<exonOverhangTolerance> bases, see below). In other words, when C<exonOverhangTolerance> C< = 0> (the default), only monoexonic reads with identical genome coordinates are merged.
 
 B<Default>: 1
 
@@ -54,7 +54,7 @@ B<Default>: 1
 
 =over
 
-=item * Tolerated overhang ("fuzziness") of 5' and 3' ends when calculating read support (see C<minReadSupport> option above)
+=item * Tolerated overhang ("fuzziness") of 5' and 3' ends for two reads to be considered equivalent when calculating read support (see C<minReadSupport> option above)
 
 =item * Tolerated overhang of the terminal exon of a shorter read over the splice site of a longer one. See explanation in "DESCRIPTION" below.
 
@@ -139,7 +139,7 @@ Setting this option to a positive integer can correct mismapped splice junctions
 
 =end HTML
 
-This option only affects the terminal exons of a shorter transcript that overlap an intron of a longer one. The setting works as explained below:
+The setting works as explained below:
 
 =begin HTML
 
