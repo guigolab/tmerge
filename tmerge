@@ -101,6 +101,7 @@ Two extra GTF attributes are present:
 
 =back
 
+The B<'score'> column (6th field) reports the number of input reads the TM contains.
 
 =head1 DESCRIPTION
 
@@ -130,7 +131,7 @@ and
 
 =back
 
-Condition (2) means that C<tmerge> will never artificially extend spliced transcripts:
+Condition (2) means that C<tmerge> will never artificially extend intron chains:
 
 =begin HTML
 
@@ -359,13 +360,9 @@ my $nrContigs=scalar(keys %contig_to_transcripts);
 print STDERR "Done. Built $nrContigs contigs.\n";
 
 print STDERR "Comparing transcript structures...\n";
-my $countTranscripts2=0;
 my %transcript_introns=();
-my $containerNumber=0;
 
-my $countContigs=0;
 CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> scalar(@{$contig_to_transcripts{$a}}) } keys %contig_to_transcripts){ #sort contigs by size so we start with the biggest ones (useful if cpus>1)
-	$countContigs++;
 	#print STDERR "Processing contig $contig (contains ".scalar(@{$contig_to_transcripts{$contig}})." transcripts)\n";
 	$process_manager->start and next CONTIGS;
 	#print STDERR "CONTIG: $contig\n";
@@ -497,8 +494,13 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 										$lastTr1IntronMatchedToTr2=$i;
 									}
 									$intronTr1Index=$i+1; #skip directly to next $tr1 intron at the next round (next $tr2 intron)
-									if($intronTr1Index > $#{$transcript_introns{$tr1}} && $j < $#{$transcript_introns{$tr2}} && ${$transcript_exons{$tr1}}[0][1] == ${$transcript_exons{$tr2}}[0][1] && ${$transcript_introns{$tr2}}[$j+1][1] >= ${$transcript_exons{$tr1}}[-1][2] ){ #we've reached the last intron of tr1. Transfer remaining exons of tr2 to tr1, if they're compatible
+									if($intronTr1Index > $#{$transcript_introns{$tr1}} #we've reached the last intron of tr1.
+										&& $j < $#{$transcript_introns{$tr2}} #we've not reached the last intron of tr2.
+										&& ${$transcript_introns{$tr1}}[0][1] == ${$transcript_introns{$tr2}}[0][1] #tr1 and tr2's respective intron chains start at the same coord
+										&& ${$transcript_introns{$tr2}}[$j+1][1] >= ${$transcript_exons{$tr1}}[-1][2] - $exonOverhangTolerance){ #tr1's last exon does not overhang too much inside tr2's next intron
+										#Transfer remaining exons of tr2 to tr1, if they're compatible
 										$lastTr1IntronMatchedToTr2=$i;
+#										print STDERR "STEP 3\n";
 		#								print STDERR "##a $firstTr1IntronMatchedToTr2 $lastTr1IntronMatchedToTr2\n";
 										if(checkIntronExonOverlap($tr1,$tr2,$firstTr1IntronMatchedToTr2,$lastTr1IntronMatchedToTr2) ==0){
 
@@ -515,6 +517,7 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 											next NEXTTR2;
 										}
 									}
+#									print STDERR "last intron tr1\n";
 							 		last;
 								}
 								else{ # introns overlap but don't exactly match, give up current tr2
@@ -525,7 +528,7 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 							elsif($overlap == -1){ #intron1 is downstream of intron2
 								if($countIntronsTr2MatchedToTr1 == $#{$transcript_introns{$tr2}}){ # all tr2 introns have found a match in tr1
 									#print STDERR "##b $firstTr1IntronMatchedToTr2 $lastTr1IntronMatchedToTr2\n";
-
+#									print STDERR "YES 1";
 									if(checkIntronExonOverlap($tr1,$tr2,$firstTr1IntronMatchedToTr2,$lastTr1IntronMatchedToTr2) ==0){
 										$container_to_transcripts{$tr1}{$tr2}=undef ;
 										$transcript_to_container{$tr2}=$tr1;
@@ -539,6 +542,7 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 									}
 								}
 								else{
+
 									if($i==0 && $j==0){ #first intron of tr1 is downstream of first intron of tr2. Since transcripts are sorted by position of first intron, we can skip the rest of the tr2 list
 #										print STDERR "NO 5\n";
 										next NEXTTR1;
@@ -560,7 +564,7 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 					}
 					if($countIntronsTr2MatchedToTr1 == $#{$transcript_introns{$tr2}}){ #fully identical or contained intron chain
 						#print STDERR "##c $firstTr1IntronMatchedToTr2 $lastTr1IntronMatchedToTr2\n";
-
+#						print STDERR "STEP 4\n";
 						if(checkIntronExonOverlap($tr1,$tr2,$firstTr1IntronMatchedToTr2,$lastTr1IntronMatchedToTr2) ==0){
 							$container_to_transcripts{$tr1}{$tr2}=undef ;
 							$transcript_to_container{$tr2}=$tr1;
@@ -568,6 +572,10 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 #							print STDERR "MATCH 4\n";
 							next NEXTTR2
 						}
+					}
+					else{
+#						print STDERR "NO 9\n";
+
 					}
 
 				}
@@ -692,12 +700,12 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 			foreach my $t (@trList){
 				push(@transcriptsList, $transcript_index{$t})
 			}
-			printGTF($tr, join(",", @transcriptsList), join(",", @longest), $contig);
+			printGTF($tr, scalar(@transcriptsList), join(",", @transcriptsList), join(",", @longest), $contig);
 #			printGTF($tr, join(",", @sortedList), $contig);
 		}
 		else{ #tr is not a container
 			unless(exists ($transcript_to_container{$tr})) { # i.e. if tr is not a container, and is not contained
-				printGTF($tr, $transcript_index{$tr}, $transcript_index{$tr}, $contig);
+				printGTF($tr, 1, $transcript_index{$tr}, $transcript_index{$tr}, $contig);
 			}
 			#else{ #i.e. if tr is not a container, but is contained
 				#print STDERR "ERROR: transcript $tr ($transcript_index{$tr}) in contig $contig not printed in output.\n"
@@ -724,13 +732,13 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 				foreach my $t (@trList){
 					push(@transcriptsList, $transcript_index{$t})
 				}
-				printGTF($tr, join(",", @transcriptsList), join(",", @longest), $contig);
+				printGTF($tr, scalar(@transcriptsList), join(",", @transcriptsList), join(",", @longest), $contig);
 			}
 
 		}
 		elsif($minReadSupport<2){ #tr is not a container
 			unless(exists ($transcript_to_container{$tr})) { # i.e. if tr is not a container, and is not contained
-				printGTF($tr, $transcript_index{$tr}, $transcript_index{$tr}, $contig);
+				printGTF($tr, 1, $transcript_index{$tr}, $transcript_index{$tr}, $contig);
 
 			}
 			#else{ #i.e. if tr is not a container, but is contained
@@ -827,9 +835,10 @@ sub buildContig{
 
 sub printGTF{
 	my $transcript_id=$_[0];
-	my $contains=$_[1];
-	my $longest=$_[2];
-	my $contig=$_[3];
+	my $score=$_[1];
+	my $contains=$_[2];
+	my $longest=$_[3];
+	my $contig=$_[4];
 	my $fileOut="$tmpdir/$contig.gff";
 	open TMPOUT, ">>$fileOut" or die "ERROR: Couldn't open temp output filehandle $fileOut\n";
 	foreach my $exon (@{$transcript_exons{$transcript_id}}){
@@ -847,7 +856,7 @@ sub printGTF{
 			die;
 		}
 		my $tmId=makeTmId($transcript_id);
-		print TMPOUT "${$exon}[0]\ttmerge\texon\t${$exon}[1]\t${$exon}[2]\t.\t$strand\t.\tgene_id \"$tmId\"; transcript_id \"$tmId\"; contains \"$contains\"; longest \"$longest\";\n";
+		print TMPOUT "${$exon}[0]\ttmerge\texon\t${$exon}[1]\t${$exon}[2]\t$score\t$strand\t.\tgene_id \"$tmId\"; transcript_id \"$tmId\"; contains \"$contains\"; longest \"$longest\";\n";
 	}
 	close TMPOUT;
 }

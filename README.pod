@@ -82,6 +82,7 @@ Two extra GTF attributes are present:
 
 =back
 
+The B<'score'> column (6th field) reports the number of input reads the TM contains.
 
 =head1 DESCRIPTION
 
@@ -111,7 +112,7 @@ and
 
 =back
 
-Condition (2) means that C<tmerge> will never artificially extend spliced transcripts:
+Condition (2) means that C<tmerge> will never artificially extend intron chains:
 
 =begin HTML
 
