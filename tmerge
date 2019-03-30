@@ -449,20 +449,20 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 	@list1Spliced=();
 	NEXTTR1: for (my $k=0; $k<=$#sortedList1Spliced; $k++){
 		my $tr1=$sortedList1Spliced[$k];
-		print STDERR "tr1 $transcript_index{$tr1}\n" if $debug;
+		print STDERR "DEBUG: tr1 $transcript_index{$tr1}\n" if $debug;
 		if(exists ($transcript_to_container{$tr1})){
 			$tr1=$transcript_to_container{$tr1};
-			print STDERR " tr1 IS CONTAINED in $transcript_index{$tr1}\n" if $debug;
+			print STDERR "DEBUG: tr1 IS CONTAINED in $transcript_index{$tr1}\n" if $debug;
 		}
 
 		NEXTTR2: for (my $l=$k+1; $l<=$#sortedList1Spliced; $l++){
 			my $tr2=$sortedList1Spliced[$l];
-			print STDERR " tr2 $transcript_index{$tr2}\n" if $debug;
+			print STDERR "DEBUG:  tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2}\n" if $debug;
 
 		#print STDERR "SPLICED tr1 $transcript_index{$tr1} tr2 $transcript_index{$tr2}\n";
 			if(exists ($transcript_to_container{$tr2})){
 				#$tr2=$transcript_to_container{$tr2};
-				print STDERR "  tr2 IS CONTAINED in $transcript_index{$tr2}\n" if $debug;
+				print STDERR "DEBUG:  tr2 IS CONTAINED in $transcript_index{$tr2}\n" if $debug;
 				next NEXTTR2;
 			}
 			my $tr1IntronChainId=makeIntronChainId(\@{$transcript_introns{$tr1}});
@@ -471,7 +471,7 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 				$container_to_transcripts{$tr1}{$tr2}=undef ;
 				$transcript_to_container{$tr2}=$tr1;
 				adjustContainerEnds($tr1,$tr2);
-				print STDERR "   MATCH 1\n" if $debug;
+				print STDERR "DEBUG:   tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} MATCH 1\n" if $debug;
 				next NEXTTR2
 			}
 			my $overlapTranscripts=overlap(${$transcript_exons{$tr1}}[0][1],${$transcript_exons{$tr1}}[-1][2],${$transcript_exons{$tr2}}[0][1],${$transcript_exons{$tr2}}[-1][2]);  #check that tr1 and tr2 are on the same strand and overlap
@@ -485,12 +485,12 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 					my $lastTr1IntronMatchedToTr2;
 					for (my $j=0; $j <= $#{$transcript_introns{$tr2}}; $j++){
 						my $intronTr2=${$transcript_introns{$tr2}}[$j];
-						print STDERR "   intronTr2 #$j: ${$intronTr2}[1], ${$intronTr2}[2]\n" if $debug;
+						print STDERR "DEBUG:   intronTr2 #$j: ${$intronTr2}[1], ${$intronTr2}[2]\n" if $debug;
 						for (my $i=$intronTr1Index; $i<= $#{$transcript_introns{$tr1}}; $i++){
 							my $intronTr1= ${$transcript_introns{$tr1}}[$i];
-							print STDERR "    intronTr1 #$i: ${$intronTr1}[1], ${$intronTr1}[2]\n" if $debug;
+							print STDERR "DEBUG:    intronTr1 #$i: ${$intronTr1}[1], ${$intronTr1}[2]\n" if $debug;
 							my $overlap=overlap(${$intronTr1}[1], ${$intronTr1}[2], ${$intronTr2}[1], ${$intronTr2}[2]);
-							print STDERR "     overlap $overlap\n" if $debug;
+							print STDERR "DEBUG:     overlap $overlap\n" if $debug;
 							if($overlap == 1){
 								if(${$intronTr2}[1] == ${$intronTr1}[1] && ${$intronTr2}[2] == ${$intronTr1}[2]){
 									$countIntronsTr2MatchedToTr1++;
@@ -507,59 +507,59 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 										&& ${$transcript_introns{$tr2}}[$j+1][1] >= ${$transcript_exons{$tr1}}[-1][2] - $exonOverhangTolerance){ #tr1's last exon does not overhang too much inside tr2's next intron
 										#Transfer remaining exons of tr2 to tr1, if they're compatible
 										$lastTr1IntronMatchedToTr2=$i;
-										print STDERR "     reached last tr1 intron\n" if $debug;
+										print STDERR "DEBUG:     reached last tr1 intron\n" if $debug;
 										if(checkIntronExonOverlap($tr1,$tr2,$firstTr1IntronMatchedToTr2,$lastTr1IntronMatchedToTr2) ==0){
 
 											$container_to_transcripts{$tr1}{$tr2}=undef ;
 											$transcript_to_container{$tr2}=$tr1;
 											transferRightExonsIntrons($tr1,$tr2,$j);
 											adjustContainerEnds($tr1,$tr2);
-											print STDERR "     MATCH 2\n" if $debug;
+											print STDERR "DEBUG:     tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} MATCH 2\n" if $debug;
 											next NEXTTR2
 
 										}
 										else{
-											print STDERR "    NO 2\n" if $debug;
+											print STDERR "DEBUG:   tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} INCOMP 2\n" if $debug;
 											next NEXTTR2;
 										}
 									}
 							 		last;
 								}
 								else{ # introns overlap but don't exactly match, give up current tr2
-									print STDERR "    NO 3\n" if $debug;
+									print STDERR "DEBUG:    tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} INCOMP 3\n" if $debug;
 									next NEXTTR2;
 								}
 							}
 							elsif($overlap == -1){ #intron1 is downstream of intron2
 								if($countIntronsTr2MatchedToTr1 == $#{$transcript_introns{$tr2}}){ # all tr2 introns have found a match in tr1
-									print STDERR "    YES 1" if $debug;
+									print STDERR "DEBUG:    YES 1" if $debug;
 									if(checkIntronExonOverlap($tr1,$tr2,$firstTr1IntronMatchedToTr2,$lastTr1IntronMatchedToTr2) ==0){
 										$container_to_transcripts{$tr1}{$tr2}=undef ;
 										$transcript_to_container{$tr2}=$tr1;
 										adjustContainerEnds($tr1,$tr2);
-										print STDERR "    MATCH 3\n" if $debug;
+										print STDERR "DEBUG:   tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} MATCH 3\n" if $debug;
 										next NEXTTR2;
 									}
 									else{
-										print STDERR "    NO 4\n" if $debug;
+										print STDERR "DEBUG:   tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} INCOMP 4\n" if $debug;
 										next NEXTTR2;
 									}
 								}
 								else{
 
 									if($i==0 && $j==0){ #first intron of tr1 is downstream of first intron of tr2. Since transcripts are sorted by position of first intron, we can skip the rest of the tr2 list
-										print STDERR "    NO 5\n" if $debug;
+										print STDERR "DEBUG:   tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} INCOMP 5\n" if $debug;
 										next NEXTTR1;
 									}
 									else{
-										print STDERR "    NO 6\n" if $debug;
+										print STDERR "DEBUG:   tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} INCOMP 6\n" if $debug;
 										next NEXTTR2;
 									}
 								}
 							}
 							elsif($overlap == -2){ #intron1 is upstream of intron2
 								if($i == $#{$transcript_introns{$tr1}} || $j > 0 ){ #last intron of tr1 is upstream of first intron of tr2, i.e. tr1 and tr2 are incompatible
-									print STDERR "    NO 7\n" if $debug;
+									print STDERR "DEBUG:   tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} INCOMP 7\n" if $debug;
 									next NEXTTR2;
 								}
 
@@ -568,17 +568,17 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 					}
 					if($countIntronsTr2MatchedToTr1 == $#{$transcript_introns{$tr2}}){ #fully identical or contained intron chain
 						#print STDERR "##c $firstTr1IntronMatchedToTr2 $lastTr1IntronMatchedToTr2\n";
-						print STDERR "    YES 2\n" if $debug;
+						print STDERR "DEBUG:    YES 2\n" if $debug;
 						if(checkIntronExonOverlap($tr1,$tr2,$firstTr1IntronMatchedToTr2,$lastTr1IntronMatchedToTr2) ==0){
 							$container_to_transcripts{$tr1}{$tr2}=undef ;
 							$transcript_to_container{$tr2}=$tr1;
 							adjustContainerEnds($tr1,$tr2);
-							print STDERR "    MATCH 4\n" if $debug;
+							print STDERR "DEBUG:    tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} MATCH 4\n" if $debug;
 							next NEXTTR2
 						}
 					}
 					else{
-						print STDERR "    NO 9\n" if $debug;
+						print STDERR "DEBUG:   tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} INCOMP 9\n" if $debug;
 
 					}
 
@@ -586,7 +586,7 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 			}
 
 			elsif($overlapTranscripts == -2){ #tr2 is downstream of tr1. Since trs are sorted by start position, we can safely skip to next tr1
-				print STDERR "    NO 10\n" if $debug;
+				print STDERR "DEBUG:   tr1 $transcript_index{$tr1} vs tr2 $transcript_index{$tr2} INCOMP 10\n" if $debug;
 				next NEXTTR1;
 			}
 
