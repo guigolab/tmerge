@@ -402,6 +402,7 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 			my @intron=($intronChr, $intronStart, $intronStop, $intronStrand);
 			push(@{$transcript_introns{$tr}}, \@intron);
 		}
+	}
 	foreach my $tr1 (@list1){
 #		print STDERR "$transcript_index{$tr1} \n";
 		if(exists ($transcript_introns{$tr1})){
