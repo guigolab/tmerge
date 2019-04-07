@@ -6,7 +6,9 @@ tmerge
 
 Merge transcriptome read-to-genome alignments into non-redundant transcript models.
 
-C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models. The program treats spliced and monoexonic reads separately (i.e., those are never merged together).
+C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models. The program treats spliced and monoexonic reads separately (I<i.e.>, those are never merged together).
+
+ C<tmerge> is fast and can typically process several millions of aligned long reads in a few minutes.
 
 =begin HTML
 
@@ -18,7 +20,7 @@ See DESCRIPTION below for more details.
 
 B<Usage example>:
 
-C<< tmerge --cpu <number of CPUs> --tmPrefix <custom transcript_id prefix string for output GTF> <input GTF file> > <output file> >>
+C<< tmerge --tmPrefix <custom transcript_id prefix string for output GTF> <input GTF file> > <output file> >>
 
 
 =head2 INPUT
@@ -31,10 +33,6 @@ Read alignments need to be uniquely identified with the C<transcript_id> GTF att
 =head2 OPTIONS
 
 =over
-
-=item * C<cpu> (integer) = Number of CPUs to use
-
-B<Default>: 1
 
 =item * C<tmPrefix> (string) = Prefix string for C<transcript_id> identifiers in the output
 
@@ -50,7 +48,7 @@ For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must shar
 
 B<Default>: 1
 
-=item * C<exonOverhangTolerance> (integer) = maximum number of nucleotides of terminal exon overhang allowed during the merging of input reads. More specifically, the value of C<exonOverhangTolerance> affects the following aspects of merging:
+=item * C<exonOverhangTolerance> (integer) = maximum number of nucleotides of terminal exon overhang allowed within an intron of another transcript during the merging of input reads. More specifically, the value of C<exonOverhangTolerance> affects the following aspects of merging:
 
 =over
 
