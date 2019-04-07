@@ -214,18 +214,13 @@ unless (defined $ARGV[0]){
 
 die "minReadSupport value must be > 0, can't continue.\n" if $minReadSupport<1;
 
-my $tmpdir="/tmp/";
-if(exists $ENV{'TMPDIR'}){
-	$tmpdir=$ENV{'TMPDIR'};
-}
 print STDERR "######################################################################################################################
 ######################################################################################################################
 ##
 ";
 
-print STDERR "##    Parameters/environment information:\n";
+print STDERR "##    Parameters information:\n";
 print STDERR "##\n";
-print STDERR "##    - Using TMP DIR: $tmpdir (edit the TMPDIR environment variable to change that)\n";
 print STDERR "##    - Minimum read support required per merged transcript model: $minReadSupport\n";
 print STDERR "##    - Exon overhang tolerance when merging: $exonOverhangTolerance bases\n";
 print STDERR "##\n";
