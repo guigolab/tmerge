@@ -8,7 +8,7 @@ Merge transcriptome read-to-genome alignments into non-redundant transcript mode
 
 C<tmerge> compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, I<i.e.>, merge compatible input transcripts into non-redundant transcript models. The program treats spliced and monoexonic reads separately (I<i.e.>, those are never merged together).
 
- C<tmerge> is fast and can typically process several millions of aligned long reads in a few minutes.
+C<tmerge> is fast and can typically process several millions of aligned long reads in a few minutes.
 
 =begin HTML
 
