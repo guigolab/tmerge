@@ -3,10 +3,8 @@
 use strict;
 use warnings FATAL => 'all';
 use Data::Dumper;
-use UUID::Generator::PurePerl;
 use Getopt::Long;
 use Pod::Usage;
-use Parallel::ForkManager;
 
 no warnings 'recursion';
 
@@ -37,7 +35,7 @@ See DESCRIPTION below for more details.
 
 B<Usage example>:
 
-C<< tmerge --cpu <number of CPUs> --tmPrefix <custom transcript_id prefix string for output GTF> <input GTF file> > <output file> >>
+C<< tmerge --tmPrefix <custom transcript_id prefix string for output GTF> <input GTF file> > <output file> >>
 
 
 =head2 INPUT
@@ -50,10 +48,6 @@ Read alignments need to be uniquely identified with the C<transcript_id> GTF att
 =head2 OPTIONS
 
 =over
-
-=item * C<cpu> (integer) = Number of CPUs to use
-
-B<Default>: 1
 
 =item * C<tmPrefix> (string) = Prefix string for C<transcript_id> identifiers in the output
 
@@ -196,12 +190,10 @@ Julien Lagarde, CRG, Barcelona, contact julienlag@gmail.com
 
 
 my $tmPrefix='';
-my $cpu=0;
 my $minReadSupport=1;
 my $exonOverhangTolerance=0;
 my $debug='';
 GetOptions ('tmPrefix=s' => \$tmPrefix,
-            'cpu=i' => \$cpu,
             'minReadSupport=i' => \$minReadSupport,
             'exonOverhangTolerance=i' => \$exonOverhangTolerance,
             'debug' => \$debug,
@@ -224,13 +216,6 @@ my $tmpdir="/tmp/";
 if(exists $ENV{'TMPDIR'}){
 	$tmpdir=$ENV{'TMPDIR'};
 }
-my $usedCpus;
-if ($cpu == 0){
-	$usedCpus=1
-}
-else{
-	$usedCpus=$cpu;
-}
 print STDERR "######################################################################################################################
 ######################################################################################################################
 ##
@@ -241,13 +226,11 @@ print STDERR "##\n";
 print STDERR "##    - Using TMP DIR: $tmpdir (edit the TMPDIR environment variable to change that)\n";
 print STDERR "##    - Minimum read support required per merged transcript model: $minReadSupport\n";
 print STDERR "##    - Exon overhang tolerance when merging: $exonOverhangTolerance bases\n";
-print STDERR "##    - Will use $usedCpus CPUs\n";
 print STDERR "##\n";
 print STDERR "######################################################################################################################
 ######################################################################################################################
 ";
 
-my $process_manager = Parallel::ForkManager->new($cpu);
 
 my $sortedGff;
 if(defined($ARGV[0])){
@@ -377,14 +360,12 @@ print STDERR "Done. Found $nr_exons exons and $transcript_count transcripts.\n";
 
 print STDERR "Building contigs (sets of overlapping transcripts)...\n";
 
-my $ug = UUID::Generator::PurePerl->new();
-my $locusNumber = $ug->generate_v1();
+my $locusNumber = 0;
 my %transcript_id_to_locus_id=();
 foreach my $tr1 (keys %transcript_to_transcript){
 	buildContig($tr1, \%transcript_to_transcript, \%transcript_id_to_locus_id, $locusNumber);
 	#generate UUID for contig (this is to write temp files):
-	my $ug = UUID::Generator::PurePerl->new();
-    $locusNumber = $ug->generate_v1();
+	$locusNumber++;
 }
 
 %transcript_to_transcript=(); #free up some memory
@@ -401,9 +382,7 @@ print STDERR "Done. Built $nrContigs contigs.\n";
 print STDERR "Comparing transcript structures...\n";
 my %transcript_introns=();
 
-CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> scalar(@{$contig_to_transcripts{$a}}) } keys %contig_to_transcripts){ #sort contigs by size so we start with the biggest ones (useful if cpus>1)
-	$process_manager->start and next CONTIGS;
-	#print STDERR "CONTIG: $contig\n";
+CONTIGS: foreach my $contig (keys %contig_to_transcripts){ #sort contigs by size so we start with the biggest ones (useful if cpus>1)
 
 	my %container_to_transcripts=(); #'value' is a subset of , or equal to, 'key''s intron chain.
 	my %transcript_to_container=();
@@ -807,7 +786,6 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 				push(@transcriptsList, $transcript_index{$t})
 			}
 			printGTF($tr, scalar(@transcriptsList), join(",", @transcriptsList), join(",", @longest), $contig);
-#			printGTF($tr, join(",", @sortedList), $contig);
 		}
 		else{ #tr is not a container
 			unless(exists ($transcript_to_container{$tr})) { # i.e. if tr is not a container, and is not contained
@@ -848,35 +826,8 @@ CONTIGS: foreach my $contig (sort { scalar(@{$contig_to_transcripts{$b}}) <=> sc
 		}
 	}
 
-	$process_manager->finish;
-}
-$process_manager->wait_all_children;
-
-
-#print all output:
-my %errorRecoveringContigGff=();
-foreach my $contig (keys %contig_to_transcripts){
-	my $tmpOut="$tmpdir/$contig.gff";
-	if(-e $tmpOut){
-		open TMPOUT, "$tmpOut" or $errorRecoveringContigGff{$contig}=1;
-
-		while(<TMPOUT>){
-			print $_;
-		}
-		close TMPOUT;
-		unlink("$tmpOut");
-	}
 }
 
-if(%errorRecoveringContigGff){
- 	print STDERR "No data output for contig(s):\n";
- 	foreach my $contig (keys %errorRecoveringContigGff){
- 		foreach my $tr (@{$contig_to_transcripts{$contig}}){
- 			print STDERR "Contig: $contig Transcript: $transcript_id_index{$tr}\n";
- 		}
- 	}
-
-}
 print STDERR "Done.\n";
 
 
@@ -903,8 +854,6 @@ sub printGTF{
 	my $contains=$_[2];
 	my $longest=$_[3];
 	my $contig=$_[4];
-	my $fileOut="$tmpdir/$contig.gff";
-	open TMPOUT, ">>$fileOut" or die "ERROR: Couldn't open temp output filehandle $fileOut\n";
 	foreach my $exon (@{$transcript_exons{$transcript_id}}){
 		my $strand='';
 		if(${$exon}[3] == -1){
@@ -920,9 +869,8 @@ sub printGTF{
 			die;
 		}
 		my $tmId=makeTmId($transcript_id);
-		print TMPOUT "${$exon}[0]\ttmerge\texon\t${$exon}[1]\t${$exon}[2]\t$score\t$strand\t.\tgene_id \"$tmId\"; transcript_id \"$tmId\"; contains \"$contains\"; longest \"$longest\";\n";
+		print "${$exon}[0]\ttmerge\texon\t${$exon}[1]\t${$exon}[2]\t$score\t$strand\t.\tgene_id \"$tmId\"; transcript_id \"$tmId\"; contains \"$contains\"; longest \"$longest\";\n";
 	}
-	close TMPOUT;
 }
 
 sub checkIntronExonOverlap{
