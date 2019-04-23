@@ -29,7 +29,7 @@ C<tmerge> is fast and can typically process several millions of aligned long rea
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png" alt="tmerge sketch" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge1.50dpi.png" alt="tmerge sketch" /></p>
 
 =end HTML
 
@@ -105,7 +105,7 @@ C<tmerge> reduces redundancy in a set of transcriptome read-to-genome alignments
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_1.png" alt="tmerge sketch" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge1.50dpi.png" alt="tmerge sketch" /></p>
 
 =end HTML
 
@@ -131,7 +131,7 @@ Condition (2) means that C<tmerge> will never artificially extend intron chains:
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_non_merge.png" alt="tmerge non-merge case" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge2.50dpi.png" alt="tmerge non-merge case" /></p>
 
 =end HTML
 
@@ -151,7 +151,7 @@ Setting this option to a positive integer can correct mismapped splice junctions
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_FalseExonOverhang.300dpi.png" alt="tmerge FalseExonOverhang sketch" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_FalseExonOverhang.50dpi.png" alt="tmerge FalseExonOverhang sketch" /></p>
 
 =end HTML
 
@@ -159,7 +159,7 @@ The setting works as explained below:
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance.300dpi.png" alt="tmerge exonOverhangTolerance sketch" /></p>
+<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance.50dpi.png" alt="tmerge exonOverhangTolerance sketch" /></p>
 
 =end HTML
 
@@ -356,7 +356,7 @@ print STDERR "Done. Found $nr_exons exons and $transcript_count transcripts.\n";
 %transcript_rev_index=();
 
 print STDERR "Building contigs (sets of overlapping transcripts)...\n";
-
+#  we build contigs to reduce the search space when looking for compatible transcript structures
 my $locusNumber = 0;
 my %transcript_id_to_locus_id=();
 foreach my $tr1 (keys %transcript_to_transcript){
@@ -388,6 +388,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){ #sort contigs by size
 	my @list1Mono=();
 	my @list1Spliced=();
 	my %supportCount=();
+	# build sets of introns for each transcript, populate @list1Mono and/or @list1Spliced accordingly:
 	foreach my $tr (@list1){
 		$supportCount{$tr}=1;
 		for (my $i=0; $i< $#{$transcript_exons{$tr}};$i++){
@@ -410,7 +411,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){ #sort contigs by size
 
 	@list1Spliced= sort ({ ${$transcript_introns{$a}}[0][1] <=> ${$transcript_introns{$b}}[0][1] or ${$transcript_exons{$a}}[0][1] <=> ${$transcript_exons{$b}}[0][1] or ${$transcript_exons{$b}}[-1][2] <=> ${$transcript_exons{$a}}[-1][2] or $a cmp $b } @list1Spliced); #sort spliced transcripts by position of first intron. second and third comparisons are necessary so the script is deterministic (otherwise ties are handled randomly)
 
-
+	# compute read support for each input spliced transcript/read:
 	if($minReadSupport>1){
 		print STDERR "Calculating spliced read support...\n" if $debug;
 		NEXTTR1: for (my $k=0; $k<=$#list1Spliced; $k++){
@@ -478,6 +479,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){ #sort contigs by size
 		}
 	}
 	print STDERR "Merging spliced reads...\n" if $debug;
+
 	NEXTTR1: for (my $k=0; $k<=$#list1Spliced; $k++){
 		my $tr1=$list1Spliced[$k];
 		print STDERR "DEBUG: tr1 $transcript_index{$tr1}\n" if $debug;
@@ -664,7 +666,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){ #sort contigs by size
 	%transcript_introns=();
 
 	@list1Mono=sort { ${$transcript_exons{$a}}[0][1] <=> ${$transcript_exons{$b}}[0][1] or ${$transcript_exons{$a}}[0][2] <=> ${$transcript_exons{$b}}[0][2] } @list1Mono;
-
+	# compute read support for each input monoexonic transcript/read:
 	if($minReadSupport>1){
 		print STDERR "Calculating monoexonic read support...\n" if $debug;
 		NEXTTR1: for (my $k=0; $k<=$#list1Mono; $k++){
