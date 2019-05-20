@@ -40,25 +40,20 @@ B<Default>: '' (empty string)
 
 By default, output C<transcript_id>s consist in arbitrary "C<TM_XXXXXXXXXXXX>" strings. If C<tmPrefix> is set, its value will prefix all C<transcript_id> strings in the GTF output.
 
-=item * C<minReadSupport> (integer) = required minimum number of reads supporting a transcript model. When building a transcript model, only the reads fulfilling the following conditions are considered:
+=item * C<minReadSupport> (integer) = minimum number of times a read alignment (as defined by its exon/intron structure) needs to be present in the input. In other words, when building a transcript model, only the reads fulfilling the following conditions are considered:
 
-For B<spliced transcripts>, at least C<minReadSupport> input reads must share a given intron chain and 5' + 3' ends (+/- C<exonOverhangTolerance> bases, see below).
+For B<spliced transcripts>, at least C<minReadSupport> input reads must share a given intron chain and 5' + 3' ends (+/- C<endFuzz> bases, see below).
 
-For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must share their 5' + 3' ends (+/- C<exonOverhangTolerance> bases, see below). In other words, when C<exonOverhangTolerance> C< = 0> (the default), only monoexonic reads with identical genome coordinates are merged.
+For B<mono-exonic transcripts>, at least C<minReadSupport> input reads must share their 5' + 3' ends (+/- C<endFuzz> bases, see below). In other words, when C<endFuzz> C< = 0> (the default), only monoexonic reads with identical genome coordinates are merged.
 
 B<Default>: 1
 
-=item * C<exonOverhangTolerance> (integer) = maximum number of nucleotides of terminal exon overhang allowed within an intron of another transcript during the merging of input reads. More specifically, the value of C<exonOverhangTolerance> affects the following aspects of merging:
+=item * C<endFuzz> (positive integer) = Tolerated fuzziness of 5' and 3' ends for two reads to be considered equivalent when calculating read support (see C<minReadSupport> option above)
 
-=over
-
-=item * Tolerated overhang ("fuzziness") of 5' and 3' ends for two reads to be considered equivalent when calculating read support (see C<minReadSupport> option above)
-
-=item * Tolerated overhang of the terminal exon of a shorter read over the splice site of a longer one. See explanation in "DESCRIPTION" below.
+B<Default>: 0 (i.e., no fuzziness allowed)
 
 
-
-=back
+=item * C<exonOverhangTolerance> (positive integer) = maximum number of nucleotides of terminal exon overhang allowed within an intron of another transcript during the merging of input reads. See explanation in "DESCRIPTION" below.
 
 B<Default>: 0 (i.e., no exon overhang allowed)
 
@@ -70,17 +65,33 @@ C<tmerge> outputs non-redundant transcript models (B<TMs>) in GTF format. Each T
 
 The C<gene_id> attribute has the same value as C<transcript_id> by convention; it is therefore meaningless.
 
-Two extra GTF attributes are present:
+The following extra GTF attributes are present in the 9th field, in order:
 
 =over
 
-=item * C<contains>: comma-separated list of input reads (C<transcript_id>s) contained in the corresponding TM, sorted by descending genomic size.
+=item * C<contains> (string): comma-separated list of input reads (C<transcript_id>s) contained in the TM, sorted by descending genomic size.
 
-=item * C<longest>: comma separated list of the longest read(s) (C<transcript_id>s) contained in the corresponding TM. This list contains more that one item only in case of length ties. Note that the reads reported do not necessarily cover the entire length of the resulting TM.
+=item * C<contains_count> (integer): number of input reads contained in the TM.
+
+=item * C<3p_dists_to_3p> (string): comma-separated list of the distances (always positive, in bases on mature RNA, i.e. ignoring introns) of the TM's 3' end to each of the input reads 3' ends it C<contains>. The list's order follows that of C<contains>.
+
+=item * C<5p_dists_to_5p> (string): comma-separated list of the distances (always positive, in bases on mature RNA, i.e. ignoring introns) of the TM's 5' end to each of the input reads 5' ends it C<contains>. The list's order follows that of C<contains>.
+
+=item * C<longest> (string): comma-separated list of the longest read(s) (C<transcript_id>s) contained in the TM. This list contains more that one item only in case of length ties. Note that the reads reported do not necessarily cover the entire length of the resulting TM.
+
+=item * C<longest_FL_supporters> (string): comma-separated list of input reads that support C<longest> over C<longest>'s full-length (+/- C<endFuzz>).
+
+=item * C<longest_FL_supporters_count> (integer): number of input reads that support C<longest> over C<longest>'s full-length (+/- C<endFuzz>).
+
+=item * C<mature_RNA_length> (integer): the mature RNA length of the TM (i.e., the sum of the lengths of all its exons)
+
+=item * C<meta_3p_dists_to_5p> (string): comma-separated list of the distances (comprised between 0 and 1, on mature RNA, i.e. ignoring introns) of the TM's B<5' end> to each of the input reads 3' ends it C<contains>, normalized over the TM's mature RNA length. The list's order follows that of C<contains>.
+
+=item * C<meta_5p_dists_to_5p> (string): comma-separated list of the distances (comprised between 0 and 1, on mature RNA, i.e. ignoring introns) of the TM's 5' end to each of the input reads 5' ends it C<contains>, normalized over the TM's mature RNA length. The list's order follows that of C<contains>.
+
+=item * C<spliced> (boolean): specifies if the TM is spliced (1) or monoexonic (0).
 
 =back
-
-The B<'score'> column (6th field) reports the number of input reads the TM contains.
 
 =head1 DESCRIPTION
 
@@ -145,25 +156,6 @@ The setting works as explained below:
 <p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance.50dpi.png" alt="tmerge exonOverhangTolerance sketch" /></p>
 
 =end HTML
-
-B<WARNING>: this option also affects how read support is calculated (see OPTIONS above)
-
-
-=head1 DEPENDENCIES
-
-=over
-
-=item * UUID::Generator::PurePerl
-
-Install (bash): C<< $ cpanm UUID::Generator::PurePerl >>
-
-=item * Parallel::ForkManager
-
-Install (bash): C<< $ cpanm Parallel::ForkManager >>
-
-=back
-
-(When using C<cpanm> you might need to use the C<--local-lib> option if you don't have admin rights, see documentation).
 
 
 =head1 AUTHOR
