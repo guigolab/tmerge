@@ -1,14 +1,14 @@
 from models.contig import Contig
 
-def build(alignments):
+def build(exons):
     """
-    Build a list of contigs from a list of alignments.
+    Build a list of contigs from a list of exons.
 
-    Contigs are overlapping alignments. 
+    Contigs are overlapping exons. 
 
     Parameters
     ----------
-    alignments: list
+    exons: list
 
     Returns
     -------
@@ -16,15 +16,15 @@ def build(alignments):
         list of contigs
     """
     contigs = [
-        Contig([alignments[0]])
+        Contig([exons[0]])
     ]
 
     cur_contig_i = 0
-    for alignment in alignments:
+    for exon in exons:
         try:
-            contigs[cur_contig_i].add_alignment(alignment)
+            contigs[cur_contig_i].add_exon(exon)
         except IndexError:
-            contigs.append(Contig([alignment]))
+            contigs.append(Contig([exon]))
             cur_contig_i += 1
 
     return contigs

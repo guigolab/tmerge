@@ -1,4 +1,4 @@
-from models.alignment import Alignment
+from models.exon import exon
 
 def parse(path):
     sequences = []
@@ -6,7 +6,7 @@ def parse(path):
         for line in f:            
             try:
                 data = line.split("\t")
-                sequence = Alignment("gtf", data[0], data[3], data[4], data[6])
+                sequence = exon("gtf", data[0], data[3], data[4], data[6], data[8])
                 sequences.append(sequence)
             except Exception as e:
                 # TODO: Handle this exception

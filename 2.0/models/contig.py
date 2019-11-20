@@ -2,28 +2,28 @@ from dataclasses import dataclass
 
 @dataclass
 class Contig:
-    __slots__ = ["alignments", "start", "end"]
+    __slots__ = ["exons", "start", "end"]
 
-    alignments: list
+    exons: list
     start: int
     end: int
     
-    def __init__(self, alignments):
-        self.start = min((a.start for a in alignments))
-        self.end = max((a.end for a in alignments))
-        self.alignments = alignments
+    def __init__(self, exons):
+        self.start = min((a.start for a in exons))
+        self.end = max((a.end for a in exons))
+        self.exons = exons
 
-    def add_alignment(self, alignment):
-        if not self.overlaps(alignment):
-            raise IndexError("Alignment not within contig.")
+    def add_exon(self, exon):
+        if not self.overlaps(exon):
+            raise IndexError("Exon not within contig.")
         
-        self.alignments.append(alignment)
+        self.exons.append(exon)
 
-        if alignment.start < self.start:
-            self.start = alignment.start
+        if exon.start < self.start:
+            self.start = exon.start
 
-        if alignment.end > self.end:
-            self.end = alignment.end
+        if exon.end > self.end:
+            self.end = exon.end
 
-    def overlaps(self, alignment):
-        return (self.start <= alignment.end and alignment.start <= self.end) or (alignment.start <= self.end and self.start <= alignment.end)
+    def overlaps(self, exon):
+        return (self.start <= exon.end and exon.start <= self.end) or (exon.start <= self.end and self.start <= exon.end)
