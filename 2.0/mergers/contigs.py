@@ -21,9 +21,9 @@ def build(alignments):
 
     cur_contig_i = 0
     for alignment in alignments:
-        if contigs[cur_contig_i].overlaps(alignment):
+        try:
             contigs[cur_contig_i].add_alignment(alignment)
-        else:
+        except IndexError:
             contigs.append(Contig([alignment], alignment.start, alignment.end))
             cur_contig_i += 1
 
