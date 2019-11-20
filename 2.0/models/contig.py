@@ -2,28 +2,28 @@ from dataclasses import dataclass
 
 @dataclass
 class Contig:
-    __slots__ = ["exons", "start", "end"]
+    __slots__ = ["transcripts", "start", "end"]
 
-    exons: list
+    transcripts: list
     start: int
     end: int
     
-    def __init__(self, exons):
-        self.start = min((a.start for a in exons))
-        self.end = max((a.end for a in exons))
-        self.exons = exons
+    def __init__(self, transcripts):
+        self.start = min((a.start for a in transcripts))
+        self.end = max((a.end for a in transcripts))
+        self.transcripts = transcripts
 
-    def add_exon(self, exon):
-        if not self.overlaps(exon):
-            raise IndexError("Exon not within contig.")
+    def add_transcript(self, transcript):
+        if not self.overlaps(transcript):
+            raise IndexError("Transcript not within contig.")
         
-        self.exons.append(exon)
+        self.transcript.append(transcript)
 
-        if exon.start < self.start:
-            self.start = exon.start
+        if transcript.start < self.start:
+            self.start = transcript.start
 
-        if exon.end > self.end:
-            self.end = exon.end
+        if transcript.end > self.end:
+            self.end = transcript.end
 
-    def overlaps(self, exon):
-        return (self.start <= exon.end and exon.start <= self.end) or (exon.start <= self.end and self.start <= exon.end)
+    def overlaps(self, transcript):
+        return (self.start <= transcript.end and transcript.start <= self.end) or (transcript.start <= self.end and self.start <= transcript.end)
