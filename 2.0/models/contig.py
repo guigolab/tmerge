@@ -7,6 +7,11 @@ class Contig:
     alignments: list
     start: int
     end: int
+    
+    def __init__(self, alignments):
+        self.start = min((a.start for a in alignments))
+        self.end = max((a.end for a in alignments))
+        self.alignments = alignments
 
     def add_alignment(self, alignment):
         if not self.overlaps(alignment):

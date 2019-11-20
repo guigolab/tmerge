@@ -5,4 +5,4 @@ data = gtf.parse("sample_data/chr1_short.gff")
 
 contigs = build(data)
 
-print(contigs[2])
+print(contigs[0])

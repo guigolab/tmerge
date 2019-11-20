@@ -16,7 +16,7 @@ def build(alignments):
         list of contigs
     """
     contigs = [
-        Contig([alignments[0]], alignments[0].start, alignments[0].end)
+        Contig([alignments[0]])
     ]
 
     cur_contig_i = 0
@@ -24,7 +24,7 @@ def build(alignments):
         try:
             contigs[cur_contig_i].add_alignment(alignment)
         except IndexError:
-            contigs.append(Contig([alignment], alignment.start, alignment.end))
+            contigs.append(Contig([alignment]))
             cur_contig_i += 1
 
     return contigs
