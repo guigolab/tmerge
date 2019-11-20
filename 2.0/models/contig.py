@@ -17,7 +17,7 @@ class Contig:
         if not self.overlaps(transcript):
             raise IndexError("Transcript not within contig.")
         
-        self.transcript.append(transcript)
+        self.transcripts.append(transcript)
 
         if transcript.start < self.start:
             self.start = transcript.start

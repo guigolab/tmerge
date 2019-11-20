@@ -1,14 +1,14 @@
 from models.contig import Contig
 
-def build(exons):
+def build(transcripts):
     """
-    Build a list of contigs from a list of exons.
+    Build a list of contigs from a list of transcripts.
 
-    Contigs are overlapping exons. 
+    Contigs are overlapping transcripts. 
 
     Parameters
     ----------
-    exons: list
+    transcripts: list
 
     Returns
     -------
@@ -16,15 +16,15 @@ def build(exons):
         list of contigs
     """
     contigs = [
-        Contig([exons[0]])
+        Contig([transcripts[0]])
     ]
 
     cur_contig_i = 0
-    for exon in exons:
+    for transcript in transcripts:
         try:
-            contigs[cur_contig_i].add_exon(exon)
+            contigs[cur_contig_i].add_transcript(transcript)
         except IndexError:
-            contigs.append(Contig([exon]))
+            contigs.append(Contig([transcript]))
             cur_contig_i += 1
 
     return contigs
