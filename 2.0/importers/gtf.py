@@ -1,18 +1,15 @@
 from Models.Alignment import Alignment
 
-def parse(path, lines=False):
+def parse(path):
     sequences = []
     with open(path, "r") as f:
-        line_count = 0
-        while not lines or line_count < lines:
+        for line in f:            
             try:
-                line = f.readline().split("\t")
-                sequence = Alignment("gtf", line[0], line[3], line[4])
+                data = line.split("\t")
+                sequence = Alignment("gtf", data[0], data[3], data[4])
                 sequences.append(sequence)
             except Exception as e:
                 # TODO: Handle this exception
                 print(e)
                 pass
-            finally:
-                line_count += 1
     return sequences
