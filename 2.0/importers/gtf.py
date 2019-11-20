@@ -1,4 +1,4 @@
-from Models.Alignment import Alignment
+from models.alignment import Alignment
 
 def parse(path):
     sequences = []
