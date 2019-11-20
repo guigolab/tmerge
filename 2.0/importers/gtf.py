@@ -6,7 +6,7 @@ def parse(path):
         for line in f:            
             try:
                 data = line.split("\t")
-                sequence = Alignment("gtf", data[0], data[3], data[4])
+                sequence = Alignment("gtf", data[0], data[3], data[4], data[6])
                 sequences.append(sequence)
             except Exception as e:
                 # TODO: Handle this exception
