@@ -16,15 +16,15 @@ def build(transcripts):
         list of contigs
     """
     contigs = [
-        Contig([transcripts[0]])
-    ]
+            Contig([transcripts[0]])
+        ]
 
     cur_contig_i = 0
-    for transcript in transcripts:
+    for transcript in transcripts[1:]:
         try:
             contigs[cur_contig_i].add_transcript(transcript)
         except IndexError:
             contigs.append(Contig([transcript]))
             cur_contig_i += 1
-
+    
     return contigs
