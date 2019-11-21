@@ -21,7 +21,7 @@ class Transcript:
 
     def add_exon(self, exon):
         if not self.are_same_transcript(exon):
-            raise TypeError("Not same transcript.")
+            raise TypeError(f"Not same transcript. {self.id} and {exon.transcript_id}")
 
 
         self.exons.append(exon)

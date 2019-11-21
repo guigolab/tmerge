@@ -26,4 +26,4 @@ class Contig:
             self.end = transcript.end
 
     def overlaps(self, transcript):
-        return (self.start <= transcript.end and transcript.start <= self.end) or (transcript.start <= self.end and self.start <= transcript.end)
+        return (self.start < transcript.end and transcript.start < self.end) or (transcript.start < self.end and self.start < transcript.end)
