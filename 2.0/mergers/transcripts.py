@@ -17,7 +17,7 @@ def build(exons):
     Note this may not be the fastest way to achieve this.
     TODO: find a faster method of building list of transcripts
     """
-    while (len(exons) > 0):
+    while exons:
         from_same_transcript = [e for e in exons if exons[0].transcript_id == e.transcript_id]
         transcripts.append(Transcript(from_same_transcript))
         for e in from_same_transcript:
