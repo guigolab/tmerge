@@ -19,11 +19,8 @@ class Contig:
         
         self.transcripts.append(transcript)
 
-        if transcript.start < self.start:
-            self.start = transcript.start
-
         if transcript.end > self.end:
             self.end = transcript.end
 
     def overlaps(self, transcript):
-        return (self.start < transcript.end and transcript.start < self.end) or (transcript.start < self.end and self.start < transcript.end)
+        return (self.start <= transcript.end and transcript.start <= self.end)
