@@ -8,7 +8,7 @@ def parse(path):
                 data = line.split("\t")
                 transcript_id = data[8].split(";")[1].replace("transcript_id", "").replace("\"", "").replace(" ", "")
                 gene_id = data[8].split(";")[0].replace("gene_id", "").replace("\"", "").replace(" ", "")
-                sequence = Exon("gtf", data[0], data[3], data[4], data[6], transcript_id, gene_id)
+                sequence = Exon("gtf", data[0], int(data[3]), int(data[4]), data[6], transcript_id, gene_id)
                 sequences.append(sequence)
             except Exception as e:
                 # TODO: Handle this exception
