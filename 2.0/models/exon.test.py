@@ -27,5 +27,12 @@ class TestExon(unittest.TestCase):
         with self.assertRaises(TypeValidationError):
             exon = Exon(**sample_data)
 
+    def test_start_lt_stop(self):
+        sample_data["start"] = 42
+        sample_data["end"] = 0
+
+        with self.assertRaises(IndexError):
+            Exon(**sample_data)
+
 if __name__ == '__main__':
     unittest.main()

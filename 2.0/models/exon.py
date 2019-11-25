@@ -16,3 +16,6 @@ class Exon:
 
     def __post_init__(self):
         dataclass_type_validator(self)
+        
+        if(self.start >= self.end):
+            raise IndexError("start must be less than end.")
