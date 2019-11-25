@@ -1,6 +1,7 @@
 =head1 NAME
 
 tmerge
+
 =for html <a href="https://travis-ci.com/jacobwindsor/tmerge"><img src="https://travis-ci.com/jacobwindsor/tmerge.svg?branch=master"></a>
 
 =head1 SYNOPSIS
