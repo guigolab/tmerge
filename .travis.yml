@@ -5,5 +5,7 @@ cache: pip
 install:
   - "pip install pipenv"
   - "pipenv install"
+before_install:
+  - "cd 2.0"
 script:
     - "pipenv run test"
