@@ -77,6 +77,8 @@ The following extra GTF attributes are present in the 9th field, in order:
 
 =item * C<5p_dists_to_5p> (string): comma-separated list of the distances (always positive, in bases on mature RNA, i.e. ignoring introns) of the TM's 5' end to each of the input reads 5' ends it C<contains>. The list's order follows that of C<contains>.
 
+=item * C<flrpm> (float): TM's expression quantification in "Full-Length Reads per Million". This corresponds to C<longest_FL_supporters_count> divided by the number of reads (i.e., C<transcript_id>'s) present in the input.
+
 =item * C<longest> (string): comma-separated list of the longest read(s) (C<transcript_id>s) contained in the TM. This list contains more that one item only in case of length ties. Note that the reads reported do not necessarily cover the entire length of the resulting TM.
 
 =item * C<longest_FL_supporters> (string): comma-separated list of input reads that support C<longest> over C<longest>'s full-length (+/- C<endFuzz>).
@@ -88,6 +90,8 @@ The following extra GTF attributes are present in the 9th field, in order:
 =item * C<meta_3p_dists_to_5p> (string): comma-separated list of the distances (comprised between 0 and 1, on mature RNA, i.e. ignoring introns) of the TM's B<5' end> to each of the input reads 3' ends it C<contains>, normalized over the TM's mature RNA length. The list's order follows that of C<contains>.
 
 =item * C<meta_5p_dists_to_5p> (string): comma-separated list of the distances (comprised between 0 and 1, on mature RNA, i.e. ignoring introns) of the TM's 5' end to each of the input reads 5' ends it C<contains>, normalized over the TM's mature RNA length. The list's order follows that of C<contains>.
+
+=item * C<rpm> (float): TM's expression quantification in "Reads per Million". This corresponds to C<contains_count> divided by the number of reads (i.e, C<transcript_id>'s) present in the input.
 
 =item * C<spliced> (boolean): specifies if the TM is spliced (1) or monoexonic (0).
 

@@ -93,6 +93,8 @@ The following extra GTF attributes are present in the 9th field, in order:
 
 =item * C<5p_dists_to_5p> (string): comma-separated list of the distances (always positive, in bases on mature RNA, i.e. ignoring introns) of the TM's 5' end to each of the input reads 5' ends it C<contains>. The list's order follows that of C<contains>.
 
+=item * C<flrpm> (float): TM's expression quantification in "Full-Length Reads per Million". This corresponds to C<longest_FL_supporters_count> divided by the number of reads (i.e., C<transcript_id>'s) present in the input.
+
 =item * C<longest> (string): comma-separated list of the longest read(s) (C<transcript_id>s) contained in the TM. This list contains more that one item only in case of length ties. Note that the reads reported do not necessarily cover the entire length of the resulting TM.
 
 =item * C<longest_FL_supporters> (string): comma-separated list of input reads that support C<longest> over C<longest>'s full-length (+/- C<endFuzz>).
@@ -104,6 +106,8 @@ The following extra GTF attributes are present in the 9th field, in order:
 =item * C<meta_3p_dists_to_5p> (string): comma-separated list of the distances (comprised between 0 and 1, on mature RNA, i.e. ignoring introns) of the TM's B<5' end> to each of the input reads 3' ends it C<contains>, normalized over the TM's mature RNA length. The list's order follows that of C<contains>.
 
 =item * C<meta_5p_dists_to_5p> (string): comma-separated list of the distances (comprised between 0 and 1, on mature RNA, i.e. ignoring introns) of the TM's 5' end to each of the input reads 5' ends it C<contains>, normalized over the TM's mature RNA length. The list's order follows that of C<contains>.
+
+=item * C<rpm> (float): TM's expression quantification in "Reads per Million". This corresponds to C<contains_count> divided by the number of reads (i.e, C<transcript_id>'s) present in the input.
 
 =item * C<spliced> (boolean): specifies if the TM is spliced (1) or monoexonic (0).
 
@@ -249,7 +253,7 @@ my %transcript_id_index=();
 
 print STDERR "Parsing GTF input...\n";
 my $nr_exons=0;
-my $transcript_count=0;
+my $read_count=0;
 my %transcript_seen=();
 my %transcript_index=();
 my %transcript_rev_index=();
@@ -279,10 +283,10 @@ while (<GFF>){
 			}
       die "Corrupt GTF. Start coordinate cannot be greater than stop coordinate at line $. . Can't continue.\n" if($start > $stop);
 			unless(exists $transcript_seen{$GTFtranscript_id}){
-				$transcript_count++;
+				$read_count++;
 				$transcript_seen{$GTFtranscript_id}=undef;
-				$transcript_index{$transcript_count}=$GTFtranscript_id;
-				$transcript_rev_index{$GTFtranscript_id}=$transcript_count;
+				$transcript_index{$read_count}=$GTFtranscript_id;
+				$transcript_rev_index{$GTFtranscript_id}=$read_count;
 			}
 
 			my $transcript_id=$transcript_rev_index{$GTFtranscript_id};
@@ -356,7 +360,8 @@ while (<GFF>){
 
 }
 close GFF;
-print STDERR "Done. Found $nr_exons exons and $transcript_count transcripts.\n";
+print STDERR "Done. Found $nr_exons exons and $read_count transcripts.\n";
+my $million_read_count=1000000/$read_count;
 %transcript_seen=();
 %transcript_rev_index=();
 
@@ -948,6 +953,8 @@ sub printGTF{
 	my @supporting_longest=@{$_[4]};
 	my $supporting_longest_count= scalar @supporting_longest;
 	my $contains_count= scalar @contains;
+	my $rpm=$contains_count/$million_read_count;
+	my $flrpm=$supporting_longest_count/$million_read_count;
 	my $spliced_bool=$_[5];
   my @distsToLeft=@{$_[6]};
   my @distsToRight=@{$_[7]};
@@ -1006,7 +1013,7 @@ sub printGTF{
 
 	foreach my $exon (@{$transcript_exons{$transcript_id}}){
 		my $tmId=makeTmId($transcript_id);
-		print "${$exon}[0]\ttmerge\texon\t${$exon}[1]\t${$exon}[2]\t$score\t$strand\t.\tgene_id \"$tmId\"; transcript_id \"$tmId\"; contains \"$contains\"; contains_count \"$contains_count\"; 3p_dists_to_3p \"$distsToThreePendString\"; 5p_dists_to_5p \"$distsToFivePendString\"; longest \"$longest\"; longest_FL_supporters \"$supporting_longest\"; longest_FL_supporters_count \"$supporting_longest_count\"; mature_RNA_length \"$length\"; meta_3p_dists_to_5p \"$metaDistsToThreePendString\"; meta_5p_dists_to_5p \"$metaDistsToFivePendString\"; spliced \"$spliced_bool\";\n";
+		print "${$exon}[0]\ttmerge\texon\t${$exon}[1]\t${$exon}[2]\t$score\t$strand\t.\tgene_id \"$tmId\"; transcript_id \"$tmId\"; contains \"$contains\"; contains_count \"$contains_count\"; 3p_dists_to_3p \"$distsToThreePendString\"; 5p_dists_to_5p \"$distsToFivePendString\"; flrpm \"$flrpm\"; longest \"$longest\"; longest_FL_supporters \"$supporting_longest\"; longest_FL_supporters_count \"$supporting_longest_count\"; mature_RNA_length \"$length\"; meta_3p_dists_to_5p \"$metaDistsToThreePendString\"; meta_5p_dists_to_5p \"$metaDistsToFivePendString\"; rpm \"$rpm\"; spliced \"$spliced_bool\";\n";
 	}
 }
 
