@@ -1,6 +1,6 @@
 import unittest
-from exon import Exon
-from transcript import Transcript
+from models.exon import Exon
+from models.transcript import Transcript
 
 class TestTranscriptModel(unittest.TestCase):
     def setUp(self):
@@ -57,6 +57,3 @@ class TestTranscriptModel(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             Transcript(self.sample_exons)
-
-if __name__ == '__main__':
-    unittest.main()

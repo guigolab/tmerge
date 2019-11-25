@@ -1,5 +1,5 @@
 import unittest
-from exon import Exon
+from models.exon import Exon
 from dataclass_type_validator import TypeValidationError
 
 sample_data = {
@@ -33,6 +33,3 @@ class TestExon(unittest.TestCase):
 
         with self.assertRaises(IndexError):
             Exon(**sample_data)
-
-if __name__ == '__main__':
-    unittest.main()

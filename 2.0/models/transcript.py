@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List
-from exon import Exon
+from models.exon import Exon
 from dataclass_type_validator import TypeValidationError
 
 

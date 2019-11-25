@@ -1,7 +1,7 @@
 import unittest
-from transcript import Transcript
-from exon import Exon
-from contig import Contig
+from models.transcript import Transcript
+from models.exon import Exon
+from models.contig import Contig
 
 class TestContigModel(unittest.TestCase):
     def setUp(self):
@@ -34,7 +34,3 @@ class TestContigModel(unittest.TestCase):
     def test_has_transcript(self):
         self.assertTrue(self.contig.has_transcript(self.sample_transcripts[0]))
         self.assertFalse(self.contig.has_transcript(Transcript([Exon("gtf", "chr1", 800, 900, "+", "abc", "123")])))
-
-    
-if __name__ == '__main__':
-    unittest.main()

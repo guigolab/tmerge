@@ -14,3 +14,6 @@ typing = "*"
 
 [requires]
 python_version = "3.7"
+
+[scripts]
+test = "python -m unittest discover -p '*_test.py'"
