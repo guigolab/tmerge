@@ -3,6 +3,8 @@ from models.transcript import Transcript
 def build(exons):
     """
     Build a list of transcripts.
+
+    Warning! Input exon data is mutated.
     """
     transcripts = []
 

@@ -4,7 +4,9 @@ def build(transcripts):
     """
     Build a list of contigs from a list of transcripts.
 
-    Contigs are overlapping transcripts. 
+    Contigs are overlapping transcripts.
+    
+    Warning! Input transcript data is mutated
 
     Parameters
     ----------
@@ -15,14 +17,13 @@ def build(transcripts):
     list
         list of contigs
     """
-    transcripts_copy = transcripts[0:]
     contigs = [ ]
 
     contig_i = 0
-    while transcripts_copy:
-        new_contig = build_contig(transcripts_copy)
+    while transcripts:
+        new_contig = build_contig(transcripts)
         for t in new_contig.transcripts:
-            transcripts_copy.remove(t)
+            transcripts.remove(t)
 
         contigs.append(new_contig)
         contig_i += 1
