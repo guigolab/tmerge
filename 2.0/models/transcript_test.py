@@ -41,6 +41,13 @@ class TestTranscriptModel(unittest.TestCase):
         self.transcript = Transcript(self.sample_exons)
         self.assertEqual(self.transcript.end, 981)
 
+    def test_diff_chromosome(self):
+        exon = Exon("gtf", "chr2", 43, 48, "+", "abc", "gfa")
+
+        with self.assertRaises(TypeError):
+            self.transcript.add_exon(exon)
+
+
     def test_multiple_exons_failure(self):
         self.sample_exons.extend([
             Exon("gtf", "chr1", 43, 49, "+", "abc", "def"),
@@ -53,6 +60,15 @@ class TestTranscriptModel(unittest.TestCase):
         self.sample_exons = [
             Exon("gtf", "chr1", 43, 49, "+", "abc", "def"),
             Exon("gtf", "chr1", 84, 983, "+", "defg", "def")
+        ]
+
+        with self.assertRaises(TypeError):
+            Transcript(self.sample_exons)
+
+
+        self.sample_exons = [
+            Exon("gtf", "chr1", 43, 49, "+", "abc", "def"),
+            Exon("gtf", "chr2", 84, 983, "+", "abc", "def")
         ]
 
         with self.assertRaises(TypeError):

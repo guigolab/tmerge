@@ -6,13 +6,14 @@ from dataclass_type_validator import TypeValidationError
 
 @dataclass
 class Transcript:
-    __slots__ = ["exons", "start", "end", "id", "strand"]
+    __slots__ = ["exons", "start", "end", "id", "strand", "chromosome"]
 
     exons: List[Exon]
     start: int
     end: int
     id: str
     strand: str
+    chromosome: str
 
     
     def __init__(self, exons):
@@ -22,12 +23,18 @@ class Transcript:
         self.exons = exons
         self.id = exons[0].transcript_id
         self.strand = exons[0].strand
+        self.chromosome = exons[0].chromosome
 
-        if not all([self.are_same_transcript(e) for e in exons]):
+        def check_all(func):
+            return not all([func(e) for e in exons])
+
+        if check_all(self.are_same_transcript):
             raise TypeError("Exons are not from the same transcript.")
-        if not all([self.are_same_strand(e) for e in exons]):
+        if check_all(self.are_same_strand):
             raise TypeError("Exons must be on the same strand.")
-
+        if check_all(self.are_same_chromosome):
+            raise TypeError("Exons must be on the same chromosome.")
+        
 
     def __post_init__(self):
         dataclass_type_validator(self)
@@ -40,6 +47,8 @@ class Transcript:
             raise TypeError(f"Not same transcript. {self.id} and {exon.transcript_id}")
         if not self.are_same_strand(exon):
             raise TypeError("Not same strand.")
+        if not self.are_same_chromosome(exon):
+            raise TypeError("Not same chromosome.")
 
         self.exons.append(exon)
 
@@ -54,3 +63,6 @@ class Transcript:
 
     def are_same_strand(self, exon):
         return self.strand == exon.strand
+
+    def are_same_chromosome(self, exon):
+        return self.chromosome == exon.chromosome

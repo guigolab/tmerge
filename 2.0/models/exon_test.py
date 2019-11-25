@@ -4,7 +4,7 @@ from dataclass_type_validator import TypeValidationError
 
 sample_data = {
     "source_type": "liff",
-    "seq_name": "zaphod",
+    "chromosome": "zaphod",
     "start": 0,
     "end": 42,
     "strand": "Betelgeuse",

@@ -4,10 +4,10 @@ from dataclass_type_validator import dataclass_type_validator
 @dataclass
 class Exon:
     # Use slots to save memory
-    __slots__ = ["source_type", "seq_name", "start", "end", "strand", "transcript_id", "gene_id"]
+    __slots__ = ["source_type", "chromosome", "start", "end", "strand", "transcript_id", "gene_id"]
 
     source_type: str
-    seq_name: str
+    chromosome: str
     start: int
     end: int
     strand: str
