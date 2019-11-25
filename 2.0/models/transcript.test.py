@@ -39,7 +39,7 @@ class TestTranscriptModel(unittest.TestCase):
         ])
 
         self.transcript = Transcript(self.sample_exons)
-        self.assertEqual(self.transcript.end, 981)      
+        self.assertEqual(self.transcript.end, 981)
 
     def test_multiple_exons_failure(self):
         self.sample_exons.extend([
