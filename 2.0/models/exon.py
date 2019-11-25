@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from dataclass_type_validator import dataclass_type_validator
 
 @dataclass
 class Exon:
@@ -12,3 +13,6 @@ class Exon:
     strand: str
     transcript_id: str
     gene_id: str
+
+    def __post_init__(self):
+        dataclass_type_validator(self)

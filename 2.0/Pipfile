@@ -9,6 +9,7 @@ rope = "*"
 
 [packages]
 biopython = "*"
+dataclass-type-validator = "*"
 
 [requires]
 python_version = "3.7"

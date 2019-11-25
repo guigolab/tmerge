@@ -1,5 +1,6 @@
 import unittest
 from exon import Exon
+from dataclass_type_validator import TypeValidationError
 
 sample_data = {
     "source_type": "liff",
@@ -17,6 +18,14 @@ class TestExon(unittest.TestCase):
         exon = Exon(**sample_data)
         for k, v in sample_data.items():
             self.assertEqual(getattr(exon, k), v)
+
+
+    def test_start_stop_ints(self):
+        sample_data["start"] = "0"
+        sample_data["end"] = "42"
+
+        with self.assertRaises(TypeValidationError):
+            exon = Exon(**sample_data)
 
 if __name__ == '__main__':
     unittest.main()
