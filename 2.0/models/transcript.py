@@ -28,8 +28,6 @@ class Transcript:
         def check_all(func):
             return not all([func(e) for e in exons])
 
-        if check_all(self.are_same_transcript):
-            raise TypeError("Exons are not from the same transcript.")
         if check_all(self.are_same_strand):
             raise TypeError("Exons must be on the same strand.")
         if check_all(self.are_same_chromosome):
@@ -43,8 +41,6 @@ class Transcript:
             raise IndexError("start must be less than end.")
 
     def add_exon(self, exon):
-        if not self.are_same_transcript(exon):
-            raise TypeError(f"Not same transcript. {self.id} and {exon.transcript_id}")
         if not self.are_same_strand(exon):
             raise TypeError("Not same strand.")
         if not self.are_same_chromosome(exon):
@@ -57,9 +53,6 @@ class Transcript:
 
         if exon.end > self.end:
             self.end = exon.end
-
-    def are_same_transcript(self, exon):
-        return self.id == exon.transcript_id
 
     def are_same_strand(self, exon):
         return self.strand == exon.strand

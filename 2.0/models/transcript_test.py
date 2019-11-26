@@ -27,11 +27,6 @@ class TestTranscriptModel(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.transcript.add_exon(exon)
 
-    def test_not_same_transcript(self):
-        exon = Exon("gtf", "chr1", 43, 48, "+", "def", "gfa")
-        with self.assertRaises(TypeError):
-            self.transcript.add_exon(exon)
-
     def test_multiple_exons(self):
         self.sample_exons.extend([
             Exon("gtf", "chr1", 43, 49, "+", "abc", "def"),
@@ -56,15 +51,6 @@ class TestTranscriptModel(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             Transcript(self.sample_exons)
-
-        self.sample_exons = [
-            Exon("gtf", "chr1", 43, 49, "+", "abc", "def"),
-            Exon("gtf", "chr1", 84, 983, "+", "defg", "def")
-        ]
-
-        with self.assertRaises(TypeError):
-            Transcript(self.sample_exons)
-
 
         self.sample_exons = [
             Exon("gtf", "chr1", 43, 49, "+", "abc", "def"),
