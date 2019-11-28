@@ -34,3 +34,13 @@ class Faker():
             contig.add_transcript(self.transcript(**kwargs))
 
         return contig
+
+    def contig_overlapping_monoexonic(self, num_transcripts=10, **kwargs):
+        transcripts_seed = []
+        start = 0
+        length = kwargs.get("length") or 50
+        for i in range(0, num_transcripts):
+            transcripts_seed.append(self.transcript(1, None, start=start, **kwargs))
+            start = start + length - 2
+        
+        return self.contig(num_transcripts, transcripts_seed)
