@@ -18,11 +18,17 @@ class Faker():
         return Exon(self.source_type, self.chromosome, start, start+length, strand, transcript_id, gene_id)
 
     def transcript(self, num_exons=5, exons_seed=None, **kwargs):
+        start = kwargs.get("start") or 0
+        strand = kwargs.get("strand") or "+"
+        
         if not exons_seed:
-            exons_seed = [self.exon(**kwargs)]
+            exons_seed = [self.exon(strand, start, **kwargs)]
+        
         transcript = Transcript(exons_seed)
+        
+        start = start + random.randrange(2, 10) * 50  # Ensures exons aren't right next to eachother
         for i in range(0, num_exons - len(exons_seed)):
-            transcript.add_exon(self.exon(**kwargs))
+            transcript.add_exon(self.exon(strand, start, **kwargs))
 
         transcript.exons.sort(key=lambda exon: exon.start)
         return transcript
