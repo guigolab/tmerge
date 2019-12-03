@@ -19,8 +19,7 @@ def same_introns(t1, t2):
     return list(_get_intron_set(t1)) == list(_get_intron_set(t2))
 
 def no_exon_intron_overlap(t1, t2):
-    longer = t1 if len(t1.exons) > len(t2.exons) else t2
-    shorter = t1 if len(t1.exons) <= len(t2.exons) else t2
+    shorter, longer = (t1, t2) if len(t1.exons) < len(t2.exons) else (t2, t1)
 
     return all(
         map(
