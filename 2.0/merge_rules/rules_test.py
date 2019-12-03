@@ -1,5 +1,5 @@
 import unittest
-from merge_rules.rules import transcript_overlap, same_introns, no_exon_intron_overlap
+from merge_rules.rules import transcript_overlap, same_introns, no_exon_intron_overlap, monoexonic_overlap
 from utils.fakers import Faker
 import copy
 
@@ -39,3 +39,25 @@ class TestRules(unittest.TestCase):
         self.assertFalse(no_exon_intron_overlap(t1, t3))
 
         self.assertFalse(no_exon_intron_overlap(t3, t1))
+
+    def test_monoexonic_overlap(self):
+        polyexon = self.faker.transcript(5)
+
+        # Test overlaps with last exon
+        monoexon = self.faker.transcript(1, start=polyexon.end - 1)
+        self.assertTrue(monoexonic_overlap(polyexon, monoexon))
+        self.assertTrue(monoexonic_overlap(monoexon, polyexon))
+
+        # Test overlaps with middle exon
+        monoexon = self.faker.transcript(1, start=polyexon.exons[3].end - 1)
+        self.assertTrue(monoexonic_overlap(polyexon, monoexon))
+        self.assertTrue(monoexonic_overlap(monoexon, polyexon))
+
+        # Test fails on no monoexon
+        with self.assertRaises(TypeError):
+            monoexonic_overlap(polyexon, copy.deepcopy(polyexon))
+
+        # Test fails on two monoexons
+        with self.assertRaises(TypeError):
+            monoexonic_overlap(monoexon, copy.deepcopy(monoexon))
+
