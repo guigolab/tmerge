@@ -32,8 +32,7 @@ def no_exon_intron_overlap(t1, t2):
     )
 
 def monoexonic_overlap(t1, t2):
-    # TODO: Ask julien. What if both are monoexonic?
-    if (len(t1.exons) != 1 and len(t2.exons) > 1) or (len(t2.exons) != 1 and len(t1.exons) > 1):
+    if len(t1.exons) != 1 and len(t2.exons) != 1:
         raise TypeError("At least one of the transcripts must be monoexonic")
     
     monoexon, polyexon = (t1, t2) if len(t1.exons) == 1 else (t2, t1)
