@@ -53,13 +53,14 @@ class TestRules(unittest.TestCase):
         self.assertTrue(monoexonic_overlap(polyexon, monoexon))
         self.assertTrue(monoexonic_overlap(monoexon, polyexon))
 
+        # Returns true on two monoexons that overlap
+        monoexon2 = self.faker.transcript(1, start=monoexon.end - 3)
+        self.assertTrue(monoexonic_overlap(monoexon, monoexon2))
+        self.assertTrue(monoexonic_overlap(monoexon2, monoexon))
+        
         # Test fails on no monoexon
         with self.assertRaises(TypeError):
             monoexonic_overlap(polyexon, copy.deepcopy(polyexon))
-
-        # Test fails on two monoexons
-        with self.assertRaises(TypeError):
-            monoexonic_overlap(monoexon, copy.deepcopy(monoexon))
 
     def test_ordered_subset(self):
         t1 = self.faker.transcript(5)
