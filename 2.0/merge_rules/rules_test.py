@@ -1,5 +1,5 @@
 import unittest
-from merge_rules.rules import transcript_overlap, same_introns, no_exon_intron_overlap, monoexonic_overlap
+from merge_rules.rules import transcript_overlap, same_introns, no_exon_intron_overlap, monoexonic_overlap, ordered_subset
 from utils.fakers import Faker
 import copy
 
@@ -60,4 +60,37 @@ class TestRules(unittest.TestCase):
         # Test fails on two monoexons
         with self.assertRaises(TypeError):
             monoexonic_overlap(monoexon, copy.deepcopy(monoexon))
+
+    def test_ordered_subset(self):
+        t1 = self.faker.transcript(5)
+        t2 = copy.deepcopy(t1)
+
+        # Knock off an exon from t1
+        t1.exons = t1.exons[:-1]
+        self.assertTrue(ordered_subset(t1, t2))
+        self.assertTrue(ordered_subset(t2, t1))
+
+        # Knock off an exon from start of t1
+        t1.exons = t1.exons[1:]
+        self.assertTrue(ordered_subset(t1, t2))
+        self.assertTrue(ordered_subset(t2, t1))
+
+        # Add exon back to end of t1
+        t1 = copy.deepcopy(t2)
+        t1.exons = t1.exons[1:]
+        self.assertTrue(ordered_subset(t1, t2))
+        self.assertTrue(ordered_subset(t2, t1))
+
+        # False if are the same intron set
+        t1 = copy.deepcopy(t2)
+        self.assertFalse(ordered_subset(t1, t2))
+        self.assertFalse(ordered_subset(t2, t1))
+
+        # Add two exons to t1. Hence, adding two introns making them not ordered subsets
+        t1.add_exon(self.faker.exon(start=t1.end + 100))
+        t1.add_exon(self.faker.exon(start=t1.end + 100))
+
+        self.assertFalse(ordered_subset(t1, t2))
+        self.assertFalse(ordered_subset(t2, t1))
+        
 
