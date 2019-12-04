@@ -54,6 +54,13 @@ class Transcript:
         if exon.end > self.end:
             self.end = exon.end
 
+    def pop_exon(self):
+        if len(self.exons) == 1:
+            raise IndexError("Cannot remove all exons from transcript.")
+        
+        self.exons.pop()
+        self.end = self.exons[len(self.exons) - 1].end
+
     def are_same_strand(self, exon):
         return self.strand == exon.strand
 
