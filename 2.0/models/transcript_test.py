@@ -64,9 +64,9 @@ class TestTranscriptModel(unittest.TestCase):
         with self.assertRaises(IndexError):
             self.transcript.pop_exon()
 
-        exon = Exon("gtf", "chr1", 60, 100, "-", "abc", "def")
+        exon = Exon("gtf", "chr1", 60, 100, "+", "abc", "def")
         self.transcript.add_exon(exon)
 
         self.transcript.pop_exon()
         self.assertEquals(len(self.transcript.exons), 1)
-        self.assertEquals(self.transcript.end, 48)
+        self.assertEquals(self.transcript.end, 42)
