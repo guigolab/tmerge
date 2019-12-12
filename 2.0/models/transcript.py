@@ -34,6 +34,10 @@ class Transcript:
             raise TypeError("Exons must be on the same chromosome.")
         
 
+    @property
+    def length(self):
+        return self.end - self.start
+
     def __post_init__(self):
         dataclass_type_validator(self)
         
