@@ -19,14 +19,17 @@ def same_introns(t1, t2):
     return list(_get_intron_set(t1)) == list(_get_intron_set(t2))
 
 def no_exon_intron_overlap(t1, t2):
+    if len(t1.exons) == 1 and len(t2.exons) == 1:
+        return not transcript_overlap(t1, t2)
+
     shorter, longer = (t1, t2) if len(t1.exons) < len(t2.exons) else (t2, t1)
 
     return all(
         map(
             lambda x: not _overlap(*x),
             product(
-                _get_intron_set(shorter),
-                _objs_to_coordinate_tuples(longer.exons)
+                _get_intron_set(longer),
+                _objs_to_coordinate_tuples(shorter.exons)
             )
         )
     )
