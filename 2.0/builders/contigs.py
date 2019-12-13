@@ -30,22 +30,21 @@ def build(transcripts):
 
     return contigs
 
-def build_contig(transcripts, contig = None, i=0):
+def build_contig(transcripts):
     """
-    Recursively builds a contig from a given list of transcripts.
+    Builds a contig from a given list of transcripts.
 
     Goes through the transcripts list sequentially and attempts to add it to the contig. 
-    Recursion halts when contig does not except the transcript due to IndexError (i.e. no overlap and on same strand)
+    Halts when contig does not accept the transcript due to IndexError (i.e. no overlap and on same strand)
     """
-    if not contig:
-        contig = Contig( [transcripts[i] ])
-        i+=1
-    try:
-        contig.add_transcript(transcripts[i])
-        return build_contig(transcripts, contig, i+1)
-    except TypeError:
-        # If transcript[i] is not on same strand then the next transcript may be on same strand and overlap so try
-        return build_contig(transcripts, contig, i+1)
-    except IndexError:
-        # If transcript[i] does not overlap then no overlap and on same strand so return
-        return contig
+    contig = Contig([transcripts[0]])
+    for transcript in transcripts[1:]:
+        try:
+            contig.add_transcript(transcript)
+        except TypeError:
+            # If transcript[i] is not on same strand then the next transcript may be on same strand and overlap so try
+            continue
+        except IndexError:
+            # If transcript[i] does not overlap then no overlap and on same strand so return
+            break
+    return contig
