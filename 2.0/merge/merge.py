@@ -1,17 +1,26 @@
 from models.transcript import Transcript
+from models.exon import Exon
 
 def merge(t1, t2):
-    first, last = (t1, t2) if t1.start <= t2.start else (t2, t1)
-    shorter, longer = (first, last) if first.end >= last.end else (first, last)
-    
-    if first is longer:
-        return first
+    shorter, longer = (t1, t2) if len(t1.exons) < len(t2.exons) else (t2, t1)
 
-    # Get the exons that are overhanging.
-    # Also gets an extra exon in case the shorter transcript is cut mid-exon
-    exon_overhang = longer.exons[len(longer.exons) - len(shorter.exons) - 2:]
-    
-    # Remove last exon
-    first.exons.pop()
-    first.exons.extend(exon_overhang)
-    return Transcript(first.exons)
+    # Create a new transcript from the coordinates of the input transcripts
+    # Takes the longest overlapping exon from each transcript
+    # I.e.
+    # ======-----=====
+    #    ===-----=========
+    # becomes
+    # ======-----=========
+
+    exons = []
+    for e1 in longer.exons:
+        start = e1.start
+        end = e1.end
+        for e2 in shorter.exons:
+            if e1.end > e2.start and e2.end > e1.start:
+                start = start if start < e2.start else e2.start
+                end = end if end > e2.end else e2.end
+
+        exons.append(Exon(source_type="MERGED", chromosome=t1.chromosome, start=start, end=end, transcript_id=t1.id, gene_id=t1.id, strand=t1.strand))
+
+    return Transcript(exons)
