@@ -1,6 +1,6 @@
 def write(contigs, output_path):
-    for i, contig in enumerate(contigs):
-        with open(output_path + f"_contig{i}.gtf", "w") as f:
+    with open(output_path, "w") as f:
+        for i, contig in enumerate(contigs):
             for transcript in contig.transcripts:
                     for exon in transcript.exons:
                         data = [
