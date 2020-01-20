@@ -18,14 +18,11 @@ parser.add_argument("-o", "--output", help="Output GTF file")
 args = parser.parse_args()
 
 transcripts = gtf.parse(args.input)
-
 print(f"Number of transcripts {len(transcripts)}")
-contigs = build_contigs(transcripts)
-print(f"Number of contigs {len(contigs)}")
-merged = build_merged(contigs)
-print(f"Number of merged contigs: {len(merged)}")
-merged_transcripts = [c.transcripts for c in merged]
-num_merged = sum([len(t) for t in merged_transcripts])
-print(f"Number of transcripts in total: {num_merged} ")
 
-write(merged, args.output)
+# Overwrite file contents first
+open(args.output, 'w').close()
+
+for i, contig in enumerate(build_contigs(transcripts)):
+    merged = build_merged(contig)
+    write(merged, f"contig_{i}", args.output)

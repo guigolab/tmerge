@@ -4,10 +4,7 @@ from functools import reduce
 from merge.rules import transcript_overlap, same_introns, no_exon_intron_overlap, monoexonic_overlap, ordered_subset
 from merge.merge import merge as m
 
-def build(contigs):
-    return list(map(merge, contigs))
-
-def merge(contig):
+def build(contig):
     if len(contig.transcripts) == 1:
         return contig
     transcripts = contig.transcripts

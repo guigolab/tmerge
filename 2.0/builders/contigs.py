@@ -14,21 +14,14 @@ def build(transcripts):
 
     Returns
     -------
-    list
-        list of contigs
+    Generator that yields one contig at a time
     """
-    contigs = [ ]
-
-    contig_i = 0
     while transcripts:
         new_contig = build_contig(transcripts)
         for t in new_contig.transcripts:
             transcripts.remove(t)
 
-        contigs.append(new_contig)
-        contig_i += 1
-
-    return contigs
+        yield new_contig
 
 def build_contig(transcripts):
     """

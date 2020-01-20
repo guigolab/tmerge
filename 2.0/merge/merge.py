@@ -1,5 +1,6 @@
 from models.transcript import Transcript
 from models.exon import Exon
+from itertools import product
 
 def merge(t1, t2):
     shorter, longer = (t1, t2) if len(t1.exons) < len(t2.exons) else (t2, t1)
@@ -11,7 +12,6 @@ def merge(t1, t2):
     #    ===-----=========
     # becomes
     # ======-----=========
-
     exons = []
     for e1 in longer.exons:
         start = e1.start
