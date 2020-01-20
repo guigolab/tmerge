@@ -3,6 +3,7 @@ from models.transcript import Transcript
 
 def parse(path):
     transcripts = {}
+    prev_chr = ""
     with open(path, "r") as f:
         for line in f:            
             try:
@@ -17,8 +18,16 @@ def parse(path):
                 else:
                     transcripts[exon.transcript_id] = Transcript([exon])
 
+                # Yield values one chromosome at a time
+                if prev_chr and exon.chromosome != prev_chr:
+                    yield list(transcripts.values())
+                    transcripts = {}
+
+                prev_chr = exon.chromosome
+
             except Exception as e:
                 # TODO: Handle this exception
                 print(e)
                 pass
-    return list(transcripts.values())
+    
+    yield list(transcripts.values())

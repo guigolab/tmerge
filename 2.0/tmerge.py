@@ -17,12 +17,10 @@ parser.add_argument("-i", "--input", help="Input GTF file")
 parser.add_argument("-o", "--output", help="Output GTF file")
 args = parser.parse_args()
 
-transcripts = gtf.parse(args.input)
-print(f"Number of transcripts {len(transcripts)}")
-
 # Overwrite file contents first
 open(args.output, 'w').close()
 
-for i, contig in enumerate(build_contigs(transcripts)):
-    merged = build_merged(contig)
-    write(merged, f"contig_{i}", args.output)
+for transcripts in gtf.parse(args.input):
+    for i, contig in enumerate(build_contigs(transcripts)):
+        merged = build_merged(contig)
+        write(merged, f"contig_{i}", args.output)
