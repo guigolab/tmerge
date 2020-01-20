@@ -4,7 +4,7 @@ def write(contigs, output_path):
             for transcript in contig.transcripts:
                     for exon in transcript.exons:
                         data = [
-                            "chr1",
+                            exon.chromosome,
                             f"contig{i}",
                             "exon",
                             str(exon.start),
