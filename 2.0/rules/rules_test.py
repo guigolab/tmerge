@@ -1,5 +1,5 @@
 import unittest
-from merge.rules import transcript_overlap, same_introns, no_exon_intron_overlap, monoexonic_overlap, ordered_subset
+from rules.rules import transcript_overlap, same_introns, no_exon_intron_overlap, monoexonic_overlap, ordered_subset
 from utils.fakers import Faker
 import copy
 

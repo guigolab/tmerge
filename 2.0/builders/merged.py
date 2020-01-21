@@ -1,8 +1,9 @@
 from models.contig import Contig
 from models.transcript import Transcript
+from models.exon import Exon
 from functools import reduce
-from merge.rules import transcript_overlap, same_introns, no_exon_intron_overlap, monoexonic_overlap, ordered_subset
-from merge.merge import merge as m
+from rules.rules import ruleset
+from itertools import product
 
 def build(contig):
     if len(contig.transcripts) == 1:
@@ -20,21 +21,32 @@ def build(contig):
             i_compare += 1
 
         if ruleset(transcripts[i], transcripts[i_compare]):
-            transcripts[i] = m(transcripts[i], transcripts[i_compare])
+            transcripts[i] = merge(transcripts[i], transcripts[i_compare])
             transcripts.pop(i_compare)
         else:
             i_compare += 1
 
     return contig
-            
 
-def ruleset(t1, t2):
-    if not transcript_overlap(t1, t2):
-        return False
-    if same_introns(t1, t2):
-        return True
-    if no_exon_intron_overlap(t1, t2) and monoexonic_overlap(t1, t2):
-        return True
-    if no_exon_intron_overlap(t1, t2) and ordered_subset(t1, t2):
-        return True
-    return False
+def merge(t1, t2):
+    shorter, longer = (t1, t2) if len(t1.exons) < len(t2.exons) else (t2, t1)
+
+    # Create a new transcript from the coordinates of the input transcripts
+    # Takes the longest overlapping exon from each transcript
+    # I.e.
+    # ======-----=====
+    #    ===-----=========
+    # becomes
+    # ======-----=========
+    exons = []
+    for e1 in longer.exons:
+        start = e1.start
+        end = e1.end
+        for e2 in shorter.exons:
+            if e1.end > e2.start and e2.end > e1.start:
+                start = start if start < e2.start else e2.start
+                end = end if end > e2.end else e2.end
+
+        exons.append(Exon(source_type="MERGED", chromosome=t1.chromosome, start=start, end=end, transcript_id=t1.id, gene_id=t1.id, strand=t1.strand))
+
+    return Transcript(exons)

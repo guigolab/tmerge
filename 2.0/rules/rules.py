@@ -56,3 +56,15 @@ def ordered_subset(t1, t2):
         return True
 
     return False
+
+
+def ruleset(t1, t2):
+    if not transcript_overlap(t1, t2):
+        return False
+    if same_introns(t1, t2):
+        return True
+    if no_exon_intron_overlap(t1, t2) and monoexonic_overlap(t1, t2):
+        return True
+    if no_exon_intron_overlap(t1, t2) and ordered_subset(t1, t2):
+        return True
+    return False
