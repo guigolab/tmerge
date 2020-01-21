@@ -5,6 +5,7 @@ from output.gtf import write
 from functools import reduce
 from models.contig import Contig
 from merge.hook import Hook
+import os
 
 HOOKS = ["chromosome_parsed", "contig_built", "contig_merged", "contig_written", "complete"]
 
@@ -33,5 +34,9 @@ class Merge:
                 self.hooks["contig_merged"].exec(merged)
                 write(merged, f"contig_{i}", self.outputPath)
                 self.hooks["contig_written"].exec(contig)
-
+        
+        self._sort()
         self.hooks["complete"].exec()
+
+    def _sort(self):
+        os.system(f"sort -n -k4 -o \"{self.outputPath}\" \"{self.outputPath}\"")
