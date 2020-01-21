@@ -1,26 +1,17 @@
-from importers import gtf
-from builders.contigs import build as build_contigs
-from builders.merged import build as build_merged
-from output.gtf import write
-from utils.fakers import Faker
-from functools import reduce
-from models.contig import Contig
+from merge.merge import Merge
+from plugins.stats import Stats
 import getopt, argparse
 
-unix_options = "ho:i:"
-gnu_options = ["help", "output=", "input="]
+unix_options = "ho:i:s"
+gnu_options = ["help", "output=", "input=", "stats"]
 
-description = "Tmerge 2.0 Beta"
+description = "tmerge 2.0 Beta"
 parser = argparse.ArgumentParser(description=description)
 
 parser.add_argument("-i", "--input", help="Input GTF file")
 parser.add_argument("-o", "--output", help="Output GTF file")
+parser.add_argument("-s", "--stats", action="store_true", help="Provide statistics for merged transcripts.")
+
 args = parser.parse_args()
 
-# Overwrite file contents first
-open(args.output, 'w').close()
-
-for transcripts in gtf.parse(args.input):
-    for i, contig in enumerate(build_contigs(transcripts)):
-        merged = build_merged(contig)
-        write(merged, f"contig_{i}", args.output)
+Merge(args.input, args.output).merge()
