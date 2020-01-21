@@ -14,4 +14,9 @@ parser.add_argument("-s", "--stats", action="store_true", help="Provide statisti
 
 args = parser.parse_args()
 
-Merge(args.input, args.output).merge()
+merger = Merge(args.input, args.output)
+
+if args.stats:
+    Stats(merger)
+
+merger.merge()
