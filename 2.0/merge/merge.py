@@ -7,7 +7,7 @@ from models.contig import Contig
 from merge.hook import Hook
 import os
 
-HOOKS = ["chromosome_parsed", "contig_built", "contig_merged", "contig_written", "complete"]
+HOOKS = ["chromosome_parsed", "contig_built", "contig_merged", "contig_written", "pre_sort", "post_sort", "complete"]
 
 class Merge:
     def __init__(self, inputPath, outputPath):
@@ -35,7 +35,9 @@ class Merge:
                 write(merged, f"contig_{i}", self.outputPath)
                 self.hooks["contig_written"].exec(contig)
         
+        self.hooks["pre_sort"].exec()
         self._sort()
+        self.hooks["post_sort"].exec()
         self.hooks["complete"].exec()
 
     def _sort(self):
