@@ -11,7 +11,7 @@ def write(contig, contig_name, output_path):
                     "0",
                     exon.strand,
                     ".",
-                    f"\gene_id \"{exon.gene_id}\"; transcript_id \"{exon.transcript_id}\";"
+                    f"gene_id \"{exon.gene_id}\"; transcript_id \"{exon.transcript_id}\";"
                 ]
 
                 f.write("\t".join(data))
