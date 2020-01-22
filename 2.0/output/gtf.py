@@ -8,10 +8,10 @@ def write(contig, contig_name, output_path):
                     "exon",
                     str(exon.start),
                     str(exon.end),
-                    ".",
+                    "0",
                     exon.strand,
                     ".",
-                    f"\"gene_id\" {exon.gene_id}; \"transcript_id\" {exon.transcript_id}"
+                    f"\gene_id \"{exon.gene_id}\"; transcript_id \"{exon.transcript_id}\";""
                 ]
 
                 f.write("\t".join(data))
