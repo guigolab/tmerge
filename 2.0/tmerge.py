@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from merge.merge import Merge
 from plugins.stats import Stats
 import getopt, argparse
