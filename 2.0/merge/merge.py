@@ -1,4 +1,4 @@
-from importers import gtf
+from parsers import gtf
 from builders.contigs import build as build_contigs
 from builders.merged import build as build_merged
 from output.gtf import write
