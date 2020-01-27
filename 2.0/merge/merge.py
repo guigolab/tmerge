@@ -1,3 +1,4 @@
+from parsers import Importer
 from parsers import gtf
 from builders.contigs import build as build_contigs
 from builders.merged import build as build_merged
@@ -8,6 +9,7 @@ from merge.hook import Hook
 import os
 
 HOOKS = ["chromosome_parsed", "contig_built", "contig_merged", "contig_written", "pre_sort", "post_sort", "complete"]
+gtf_importer = Importer.Importer(gtf.Gtf())
 
 class Merge:
     def __init__(self, inputPath, outputPath):
@@ -25,7 +27,7 @@ class Merge:
             self.hooks[hook] = Hook()
 
     def merge(self):
-        for transcripts in gtf.parse(self.inputPath):
+        for transcripts in gtf_importer.parse(self.inputPath):
             self.hooks["chromosome_parsed"].exec(transcripts)
 
             for i, contig in enumerate(build_contigs(transcripts)):

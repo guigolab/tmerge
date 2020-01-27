@@ -1,33 +1,28 @@
 from models.exon import Exon
 from models.transcript import Transcript
+from parsers import AbstractParser
 
-def parse(path):
-    transcripts = {}
-    prev_chr = ""
-    with open(path, "r") as f:
-        for line in f:            
-            try:
-                data = line.split("\t")
-                transcript_id = data[8].split(";")[1].replace("transcript_id", "").replace("\"", "").replace(" ", "")
-                gene_id = data[8].split(";")[0].replace("gene_id", "").replace("\"", "").replace(" ", "")
-                exon = Exon("gtf", data[0], int(data[3]), int(data[4]), data[6], transcript_id, gene_id)
-                prev_transcript = transcripts.get(exon.transcript_id, None)
-                
-                if prev_transcript:
-                    prev_transcript.add_exon(exon)
-                else:
-                    transcripts[exon.transcript_id] = Transcript([exon])
+class Gtf(AbstractParser.AbstractParser):
+    def get_source(self):
+        return "gtf"
 
-                # Yield values one chromosome at a time
-                if prev_chr and exon.chromosome != prev_chr:
-                    yield list(transcripts.values())
-                    transcripts = {}
+    def get_chromosome(self, data):
+            return data[0]
 
-                prev_chr = exon.chromosome
+    def get_start(self, data):
+        return int(data[3])
 
-            except Exception as e:
-                # TODO: Handle this exception
-                print(e)
-                pass
-    
-    yield list(transcripts.values())
+    def get_end(self, data):
+        return int(data[4])
+
+    def get_strand(self, data):
+        return data[6]
+
+    def get_transcript_id(self, data):
+        return data[8].split(";")[1].replace("transcript_id", "").replace("\"", "").replace(" ", "")
+
+    def get_gene_id(self, data):
+        return data[8].split(";")[0].replace("gene_id", "").replace("\"", "").replace(" ", "")
+
+    def get_meta(self, data):
+        return ""
