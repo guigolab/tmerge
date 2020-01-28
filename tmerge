@@ -277,7 +277,7 @@ while (<GFF>){
 			else{
 				die "Unrecognized strand value '$str' at line $.\n";
 			}
-      die "Corrupt GTF. Start coordinate cannot be greater than stop coordinate at line $. .\n" if($start > $stop);
+      die "Corrupt GTF. Start coordinate cannot be greater than stop coordinate at line $. . Can't continue.\n" if($start > $stop);
 			unless(exists $transcript_seen{$GTFtranscript_id}){
 				$transcript_count++;
 				$transcript_seen{$GTFtranscript_id}=undef;
@@ -288,7 +288,14 @@ while (<GFF>){
 			my $transcript_id=$transcript_rev_index{$GTFtranscript_id};
 			#Check for sorted input:
 			die "ERROR: Unsorted GTF input (line $.). Must be sorted by chr, then start, then stop. Can't continue.\n" if ($chr eq $previous_chr && $start < $previous_start);
+      if(exists $transcript_strand{$transcript_id} && $transcript_strand{$transcript_id} != $strand){
+        die "Inconsistent strand for transcript $GTFtranscript_id in input file. Can't continue.\n";
+      }
 			$transcript_strand{$transcript_id}=$strand;
+      if (exists $transcript_chr{$transcript_id} && $transcript_chr{$transcript_id} ne $chr){
+        die "Inconsistent chr for transcript $GTFtranscript_id in input file. Can't continue.\n";
+
+      }
 			$transcript_chr{$transcript_id}=$chr;
 			my @exon=($chr, $start, $stop, $strand);
 			push(@{$transcript_exons{$transcript_id}}, \@exon);
@@ -371,7 +378,7 @@ foreach my $tr (keys %transcript_id_to_locus_id){
 	push(@{$contig_to_transcripts{$contig}}, $tr);
 }
 %transcript_id_to_locus_id=();
-my $nrContigs=scalar(keys %contig_to_transcripts);
+my $nrContigs= keys %contig_to_transcripts;
 print STDERR "Done. Built $nrContigs contigs.\n";
 
 print STDERR "Comparing transcript structures...\n";
@@ -459,7 +466,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 					$transcript_to_container{$tr2}=$tr1;
 					adjustContainerEnds($tr1,$tr2);
 					if (exists $container_to_transcripts{$tr2}){
-						foreach my $tr3 (keys $container_to_transcripts{$tr2}){
+						foreach my $tr3 (keys %{$container_to_transcripts{$tr2}}){
 							$transcript_to_container{$tr3}=$tr1;
 							$container_to_transcripts{$tr1}{$tr3}=undef ;
 						}
@@ -566,7 +573,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 											transferRightExonsIntrons($tr1,$tr2,$j);
 											adjustContainerEnds($tr1,$tr2);
 											if (exists $container_to_transcripts{$tr2}){
-												foreach my $tr3 (keys $container_to_transcripts{$tr2}){
+												foreach my $tr3 (keys %{$container_to_transcripts{$tr2}}){
 													$transcript_to_container{$tr3}=$tr1;
 													$container_to_transcripts{$tr1}{$tr3}=undef ;
 												}
@@ -597,7 +604,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 										$transcript_to_container{$tr2}=$tr1;
 										adjustContainerEnds($tr1,$tr2);
 										if (exists $container_to_transcripts{$tr2}){
-											foreach my $tr3 (keys $container_to_transcripts{$tr2}){
+											foreach my $tr3 (keys %{$container_to_transcripts{$tr2}}){
 												$transcript_to_container{$tr3}=$tr1;
 												$container_to_transcripts{$tr1}{$tr3}=undef ;
 											}
@@ -640,7 +647,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 							$transcript_to_container{$tr2}=$tr1;
 							adjustContainerEnds($tr1,$tr2);
 							if (exists $container_to_transcripts{$tr2}){
-								foreach my $tr3 (keys $container_to_transcripts{$tr2}){
+								foreach my $tr3 (keys %{$container_to_transcripts{$tr2}}){
 									$transcript_to_container{$tr3}=$tr1;
 									$container_to_transcripts{$tr1}{$tr3}=undef ;
 								}
@@ -700,7 +707,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 					$transcript_to_container{$tr2}=$tr1;
 					adjustContainerEnds($tr1,$tr2);
 					if (exists $container_to_transcripts{$tr2}){
-						foreach my $tr3 (keys $container_to_transcripts{$tr2}){
+						foreach my $tr3 (keys %{$container_to_transcripts{$tr2}}){
 							$transcript_to_container{$tr3}=$tr1;
 							$container_to_transcripts{$tr1}{$tr3}=undef ;
 						}
@@ -747,7 +754,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 					$transcript_to_container{$tr2}=$tr1;
 					adjustContainerEnds($tr1,$tr2);
 					if (exists $container_to_transcripts{$tr2}){
-						foreach my $tr3 (keys $container_to_transcripts{$tr2}){
+						foreach my $tr3 (keys %{$container_to_transcripts{$tr2}}){
 							$transcript_to_container{$tr3}=$tr1;
 							$container_to_transcripts{$tr1}{$tr3}=undef ;
 						}
