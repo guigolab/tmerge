@@ -1,3 +1,5 @@
 sample_data/
 .vscode
 __pycache__/
+*.pyc
+sample/
