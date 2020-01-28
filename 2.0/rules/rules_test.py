@@ -95,16 +95,19 @@ class TestRules(unittest.TestCase):
         self.assertTrue(ordered_subset(t1, t2))
         self.assertTrue(ordered_subset(t2, t1))
 
-        # False if are the same intron set
-        t1 = copy.deepcopy(t2)
-        self.assertFalse(ordered_subset(t1, t2))
-        self.assertFalse(ordered_subset(t2, t1))
-
         # Add two exons to t1. Hence, adding two introns making them not ordered subsets
         t1.add_exon(self.faker.exon(start=t1.end + 100))
         t1.add_exon(self.faker.exon(start=t1.end + 100))
 
         self.assertFalse(ordered_subset(t1, t2))
         self.assertFalse(ordered_subset(t2, t1))
+
+        # Compare two transcripts with ordered subset of introns but with very large difference in exon length
+        t1 = self.faker.transcript(15)
+        t2 = copy.deepcopy(t1)
+        t2.exons = t2.exons[5:]
+
+        self.assertTrue(ordered_subset(t1, t2))
+        self.assertTrue(ordered_subset(t2, t1))
         
 

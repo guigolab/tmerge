@@ -52,9 +52,9 @@ def ordered_subset(t1, t2):
     t1_introns, t2_introns = list(_get_intron_set(t1)), list(_get_intron_set(t2))
     shorter, longer = (t1_introns, t2_introns) if len(t1_introns) < len(t2_introns) else (t2_introns, t1_introns)
 
-    if longer[:-1] == shorter or longer[1:] == shorter or longer[1:-1] == shorter:
-        return True
-
+    for i in range(len(longer)):
+        if longer[i:i+len(shorter)] == shorter:
+            return True
     return False
 
 
