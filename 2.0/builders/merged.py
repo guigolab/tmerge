@@ -19,10 +19,7 @@ def build(contig):
 
         if i == i_compare:
             i_compare += 1
-
-
-        if transcripts[i].id == "m54333_181221_200050/40370620/ccs" and transcripts[i_compare].id == "m54333_181221_200050/45941650/ccs":
-            print("Yes")
+            
         if ruleset(transcripts[i], transcripts[i_compare]):
             transcripts[i] = merge(transcripts[i], transcripts[i_compare])
             transcripts.pop(i_compare)
