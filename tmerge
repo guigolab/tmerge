@@ -209,9 +209,9 @@ unless (defined $ARGV[0]){
                -output  => $filehandle } );
 }
 
-die "minReadSupport value must be > 0, can't continue.\n" if $minReadSupport<1;
-die "exonOverhangTolerance value must be >= 0, can't continue.\n" if $exonOverhangTolerance<0;
-die "endFuzz value must be >= 0, can't continue.\n" if $transcriptEndFuzziness<0;
+die "ERROR: minReadSupport value must be > 0, can't continue.\n" if $minReadSupport<1;
+die "ERROR: exonOverhangTolerance value must be >= 0, can't continue.\n" if $exonOverhangTolerance<0;
+die "ERROR: endFuzz value must be >= 0, can't continue.\n" if $transcriptEndFuzziness<0;
 
 print STDERR "######################################################################################################################
 ######################################################################################################################
@@ -235,10 +235,10 @@ if(defined($ARGV[0])){
 	$sortedGff=$ARGV[0];
 }
 else{
-	die "Need input GTF file name as argument.\n";
+	die "ERROR: Need input GTF file name as argument.\n";
 }
 
-open GFF, "$sortedGff" or die $!;
+open GFF, "$sortedGff" or die "ERROR: ".$!;
 
 my %transcript_to_transcript=();
 my %transcript_exons=();
@@ -279,9 +279,9 @@ while (<GFF>){
 				$strand=0;
 			}
 			else{
-				die "Unrecognized strand value '$str' at line $.\n";
+				die "ERROR: Unrecognized strand value '$str' at line $.\n";
 			}
-      die "Corrupt GTF. Start coordinate cannot be greater than stop coordinate at line $. . Can't continue.\n" if($start > $stop);
+      die "ERROR: Corrupt GTF. Start coordinate cannot be greater than stop coordinate at line $. . Can't continue.\n" if($start > $stop);
 			unless(exists $transcript_seen{$GTFtranscript_id}){
 				$read_count++;
 				$transcript_seen{$GTFtranscript_id}=undef;
@@ -293,11 +293,11 @@ while (<GFF>){
 			#Check for sorted input:
 			die "ERROR: Unsorted GTF input (line $.). Must be sorted by chr, then start, then stop. Can't continue.\n" if ($chr eq $previous_chr && $start < $previous_start);
       if(exists $transcript_strand{$transcript_id} && $transcript_strand{$transcript_id} != $strand){
-        die "Inconsistent strand for transcript $GTFtranscript_id in input file. Can't continue.\n";
+        die "ERROR: Inconsistent strand for transcript $GTFtranscript_id in input file. Can't continue.\n";
       }
 			$transcript_strand{$transcript_id}=$strand;
       if (exists $transcript_chr{$transcript_id} && $transcript_chr{$transcript_id} ne $chr){
-        die "Inconsistent chr for transcript $GTFtranscript_id in input file. Can't continue.\n";
+        die "ERROR: Inconsistent chr for transcript $GTFtranscript_id in input file. Can't continue.\n";
 
       }
 			$transcript_chr{$transcript_id}=$chr;
@@ -361,7 +361,7 @@ while (<GFF>){
 }
 close GFF;
 print STDERR "Done. Found $nr_exons exons and $read_count transcripts.\n";
-my $million_read_count=1000000/$read_count;
+my $million_read_count=1000000/($read_count+1);
 %transcript_seen=();
 %transcript_rev_index=();
 
@@ -567,7 +567,7 @@ CONTIGS: foreach my $contig (keys %contig_to_transcripts){
 									if($intronTr1Index > $#{$transcript_introns{$tr1}} #we've reached the last intron of tr1.
 										&& $j < $#{$transcript_introns{$tr2}} #we've not reached the last intron of tr2.
 										&& ${$transcript_introns{$tr1}}[0][1] == ${$transcript_introns{$tr2}}[0][1] #tr1 and tr2's respective intron chains start at the same coord
-										&& ${$transcript_introns{$tr2}}[$j+1][1] >= ${$transcript_exons{$tr1}}[-1][2] - $exonOverhangTolerance){ #tr1's last exon does not overhang too much inside tr2's next intron
+										&& ${$transcript_introns{$tr2}}[$j+1][1] > ${$transcript_exons{$tr1}}[-1][2] - $exonOverhangTolerance){ #tr1's last exon does not overhang too much inside tr2's next intron
 										#Transfer remaining exons of tr2 to tr1, if they're compatible
 										$lastTr1IntronMatchedToTr2=$i;
 										print STDERR "DEBUG:     reached last tr1 intron\n" if $debug;
@@ -1057,7 +1057,7 @@ sub endDistances{
         last;
       }
       elsif ($containedLeftStart < ${${$transcript_exons{$container}}[$i]}[1]){
-        die "Program died due to a bug (in endDistances subroutine: $containedLeftStart < ${${$transcript_exons{$container}}[$i]}[1])\nsorry. Please contact author.\n";
+        die "ERROR: Program died due to a bug (in endDistances subroutine: $containedLeftStart < ${${$transcript_exons{$container}}[$i]}[1])\nsorry. Please contact author.\n";
       }
     }
 
@@ -1077,7 +1077,7 @@ sub endDistances{
         last;
       }
       elsif ($containedRightEnd > ${${$transcript_exons{$container}}[$i]}[2]){
-        die "Program died due to a bug (in endDistances subroutine: $containedRightEnd > ${${$transcript_exons{$container}}[$i]}[2])\n, sorry. Please contact author.\n";
+        die "ERROR: Program died due to a bug (in endDistances subroutine: $containedRightEnd > ${${$transcript_exons{$container}}[$i]}[2])\n, sorry. Please contact author.\n";
       }
     }
     #print STDERR "\tFinal distToLeft: $distToLeft\n";
@@ -1099,10 +1099,10 @@ sub checkIntronExonOverlap{
 	my $firstTrAIntronMatchedToTrB=$_[2];
 	my $lastTrAIntronMatchedToTrB=$_[3];
 	unless (defined $firstTrAIntronMatchedToTrB){
-		die "firstTrAIntronMatchedToTrB is undefined for $transcript_index{$trA} / $transcript_index{$trB}\n";
+		die "ERROR: firstTrAIntronMatchedToTrB is undefined for $transcript_index{$trA} / $transcript_index{$trB}\n";
 	}
 	unless (defined $lastTrAIntronMatchedToTrB){
-		die "lastTrAIntronMatchedToTrB is undefined for $transcript_index{$trA} / $transcript_index{$trB}\n";
+		die "ERROR: lastTrAIntronMatchedToTrB is undefined for $transcript_index{$trA} / $transcript_index{$trB}\n";
 
 	}
 		my @exons2=(${$transcript_exons{$trB}}[0],${$transcript_exons{$trB}}[-1]); #only terminal exons
