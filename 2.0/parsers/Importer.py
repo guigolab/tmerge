@@ -7,7 +7,6 @@ class Importer():
 
     def parse(self, path):
         transcripts = {}
-        prev_chr = ""
         with open(path, "r") as f:
             for line in f:            
                 try:
@@ -27,13 +26,6 @@ class Importer():
                         prev_transcript.add_exon(exon)
                     else:
                         transcripts[exon.transcript_id] = Transcript([exon])
-
-                    # Yield values one chromosome at a time
-                    if prev_chr and exon.chromosome != prev_chr:
-                        yield list(transcripts.values())
-                        transcripts = {}
-
-                    prev_chr = exon.chromosome
 
                 except Exception as e:
                     # TODO: Handle this exception
