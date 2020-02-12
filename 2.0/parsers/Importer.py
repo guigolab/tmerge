@@ -1,35 +1,49 @@
 from models.exon import Exon
-from models.transcript import Transcript
+from models.transcript_model import TranscriptModel
 
 class Importer():
     def __init__(self, parser):
         self.parser = parser
 
     def parse(self, path):
-        transcripts = {}
+        transcript_models = {}
         with open(path, "r") as f:
             for line in f:            
-                try:
-                    data = line.split("\t")
-                    exon = Exon(
-                        self.parser.get_source(),
-                        self.parser.get_chromosome(data),
-                        self.parser.get_start(data),
-                        self.parser.get_end(data),
-                        self.parser.get_strand(data),
-                        self.parser.get_transcript_id(data),
-                        self.parser.get_gene_id(data)
-                    )
-                    prev_transcript = transcripts.get(exon.transcript_id, None)
-                    
-                    if prev_transcript:
-                        prev_transcript.add_exon(exon)
-                    else:
-                        transcripts[exon.transcript_id] = Transcript([exon])
+                # try:
+                data = line.split("\t")
+                self.parser.set_data(data)
+                id = self.parser.get_transcript_id()
+                start = self.parser.get_start()
+                stop = self.parser.get_end()
 
-                except Exception as e:
-                    # TODO: Handle this exception
-                    print(e)
-                    pass
+                if self.parser.get_transcript_id() not in transcript_models:
+                    transcript_models[id] = TranscriptModel(
+                        id,
+                        self.parser.get_chromosome(),
+                        self.parser.get_strand(),
+                        start,
+                        stop
+                    )
+
+                else:
+                    # Add the splice junction to the transcript
+                    # Assumes ordered input
+                    tm = transcript_models[id]
+
+                    if not stop >= tm.TES:
+                        raise IndexError("Input not sorted.")
+                    if self.parser.get_chromosome() != tm.chromosome:
+                        raise TypeError("Transcripts spread across multiple chromosomes!")
+                    if self.parser.get_strand() != tm.strand:
+                        raise TypeError("Transcripts spread across two strands!")
+
+                    old_TES = tm.TES
+                    tm.TES = stop
+                    tm.add_junction(old_TES, start)
+
+                # except Exception as e:
+                #     # TODO: Handle this exception
+                #     print(e)
+                #     pass
         
-        yield list(transcripts.values())
+        return list(transcript_models.values())

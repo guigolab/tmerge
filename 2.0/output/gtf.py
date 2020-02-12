@@ -1,18 +1,48 @@
-def write(contig, contig_name, output_path):
+def write(transcripts, output_path):
     with open(output_path, "a") as f:
-        for transcript in contig.transcripts:
-            for exon in transcript.exons:
+        for transcript in transcripts:
+            if transcript.monoexonic:
+                start = transcript.TSS
+                end = transcript.TES
+
                 data = [
-                    exon.chromosome,
-                    contig_name,
+                    transcript.chromosome,
+                    "TMERGE",
                     "exon",
-                    str(exon.start),
-                    str(exon.end),
+                    str(start),
+                    str(end),
                     "0",
-                    exon.strand,
+                    transcript.strand,
                     ".",
-                    f"gene_id \"{exon.gene_id}\"; transcript_id \"{exon.transcript_id}\";"
+                    f"gene_id \"{transcript.id}\"; transcript_id \"{transcript.id}\"; MERGED_COUNT \"{transcript.transcript_count}\";"
                 ]
 
                 f.write("\t".join(data))
                 f.write("\n")
+
+            else:
+                for idx in range(0, len(transcript.junctions) + 1):
+                    if idx == 0:
+                        start = transcript.TSS
+                        end = transcript.junctions[0][0]
+                    elif idx >= len(transcript.junctions):
+                        start = transcript.junctions[idx - 1][1]
+                        end = transcript.TES
+                    else:
+                        start = transcript.junctions[idx - 1][1]
+                        end = transcript.junctions[idx][0]
+
+                    data = [
+                        transcript.chromosome,
+                        "TMERGE",
+                        "exon",
+                        str(start),
+                        str(end),
+                        "0",
+                        transcript.strand,
+                        ".",
+                        f"gene_id \"{transcript.id}\"; transcript_id \"{transcript.id}\"; MERGED_COUNT \"{transcript.transcript_count}\";"
+                    ]
+
+                    f.write("\t".join(data))
+                    f.write("\n")
