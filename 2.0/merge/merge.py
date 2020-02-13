@@ -61,13 +61,16 @@ class Merge:
         transcripts = gtf_importer.parse(self.inputPath)
         for contig in self.build_contigs(transcripts):
             merged = {}
-            for transcript in contig.transcripts.values():
-                base = transcript
+            while contig.transcripts:
+                base = next(iter(contig.transcripts.values()))
                 # Check if transcript can be merged
                 mergeable = [
                     x for x in contig.transcripts.values()
                     if self.ruleset(base, x)
                 ]
+            
+                if not mergeable:
+                    mergeable = [base]
 
                 lowest_TSS = min([x.TSS for x in mergeable])
                 highest_TES = max([x.TES for x in mergeable])
@@ -85,8 +88,10 @@ class Merge:
                     merged[new_tm_id] = new_tm
 
                 # Remove all from merged
+                for t in mergeable:
+                    del contig.transcripts[t.id]
 
-            write(list(merged.values()), self.outputPath)
+            write(merged.values(), self.outputPath)
         
         self.hooks["pre_sort"].exec()
         self._sort()
