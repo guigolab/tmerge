@@ -41,38 +41,35 @@ class Merge:
 
     def merge(self):
         parsed = gtf_importer.parse(self.inputPath)
-        merged = {}
-
-        for tm in parsed:
-            if tm.id in merged:
-                continue
-            # Check if transcript can be merged
-            mergeable = [
-                x for x in parsed
+        for contig in build_contigs(parsed):
+            merged = {}
+            for tm in contig.transcripts:
+                # Check if transcript can be merged
+                mergeable = [
+                    x for x in parsed
                     if self.ruleset(tm, x)
-                ]
+                    ]
 
-            if not mergeable:
-                merged[tm.id] = tm
-                continue
+                if not mergeable:
+                    merged[tm.id] = tm
+                    continue
 
+                lowest_TSS = min([x.TSS for x in mergeable])
+                highest_TES = max([x.TES for x in mergeable])
+                longest = max([x.length for x in mergeable])
+                new_tm_id = [x for x in mergeable if x.length == longest][0].id # TODO; This may cause collisions
+                
+                # Build the merged model
+                new_tm = TranscriptModel(new_tm_id, tm.chromosome, tm.strand, lowest_TSS, highest_TES)
+                for m in mergeable:
+                    for j in m.junctions:
+                        new_tm.add_junction(*j)
 
-            lowest_TSS = min([x.TSS for x in mergeable])
-            highest_TES = max([x.TES for x in mergeable])
-            longest = max([x.length for x in mergeable])
-            new_tm_id = [x for x in mergeable if x.length == longest][0].id # TODO; This may cause collisions
-            
-            # Build the merged model
-            new_tm = TranscriptModel(new_tm_id, tm.chromosome, tm.strand, lowest_TSS, highest_TES)
-            for m in mergeable:
-                for j in m.junctions:
-                    new_tm.add_junction(*j)
+                new_tm.transcript_count = len(mergeable)
+                if new_tm_id not in merged:
+                    merged[new_tm_id] = new_tm
 
-            new_tm.transcript_count = len(mergeable)
-            if new_tm_id not in merged:
-                merged[new_tm_id] = new_tm
-
-        write(list(merged.values()), self.outputPath)
+            write(list(merged.values()), self.outputPath)
         
         self.hooks["pre_sort"].exec()
         self._sort()

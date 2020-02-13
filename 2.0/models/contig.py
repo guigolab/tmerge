@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from utils import ranges
 
 @dataclass
 class Contig:
@@ -13,8 +14,8 @@ class Contig:
         if not all([t.strand for t in transcripts]):
             raise TypeError("Exons must be on the same strand.")
 
-        self.start = min((a.start for a in transcripts))
-        self.end = max((a.end for a in transcripts))
+        self.start = min((a.TSS for a in transcripts))
+        self.end = max((a.TES for a in transcripts))
         self.transcripts = transcripts
         self.strand = transcripts[0].strand
 
@@ -26,11 +27,11 @@ class Contig:
         
         self.transcripts.append(transcript)
         
-        if transcript.end > self.end:
-            self.end = transcript.end
+        if transcript.TES > self.end:
+            self.end = transcript.TES
 
     def overlaps(self, transcript):
-        return self.end >= transcript.start and transcript.end >= self.start
+        return ranges.overlaps((self.start, self.end), (transcript.TSS, transcript.TES))
 
     def is_plus(self):
         return self.strand == "+"
