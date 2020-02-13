@@ -1,12 +1,13 @@
 from models.exon import Exon
 from models.transcript_model import TranscriptModel
+from collections import OrderedDict
 
 class Importer():
     def __init__(self, parser):
         self.parser = parser
 
     def parse(self, path):
-        transcript_models = {}
+        transcript_models = OrderedDict()
         with open(path, "r") as f:
             for line in f:            
                 # try:
@@ -46,4 +47,4 @@ class Importer():
                 #     print(e)
                 #     pass
         
-        return list(transcript_models.values())
+        return transcript_models

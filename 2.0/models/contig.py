@@ -5,19 +5,19 @@ from utils import ranges
 class Contig:
     __slots__ = ["transcripts", "start", "end", "strand"]
 
-    transcripts: list
+    transcripts: dict
     start: int
     end: int
     strand: str
     
     def __init__(self, transcripts):
-        if not all([t.strand for t in transcripts]):
+        if not all([t.strand for t in transcripts.values()]):
             raise TypeError("Exons must be on the same strand.")
 
-        self.start = min((a.TSS for a in transcripts))
-        self.end = max((a.TES for a in transcripts))
+        self.start = min((a.TSS for a in transcripts.values()))
+        self.end = max((a.TES for a in transcripts.values()))
         self.transcripts = transcripts
-        self.strand = transcripts[0].strand
+        self.strand = next(iter(transcripts.values())).strand
 
     def add_transcript(self, transcript):
         if not self.are_same_strand(transcript):
@@ -25,7 +25,7 @@ class Contig:
         if not self.overlaps(transcript):
             raise IndexError("Transcript not within contig.")
         
-        self.transcripts.append(transcript)
+        self.transcripts[transcript.id] = transcript
         
         if transcript.TES > self.end:
             self.end = transcript.TES
