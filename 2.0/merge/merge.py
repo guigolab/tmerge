@@ -28,6 +28,17 @@ class Merge:
         for hook in HOOKS:
             self.hooks[hook] = Hook()
 
+    @staticmethod
+    def ruleset(transcript1, transcript2):
+        return (
+            transcript1.chromosome == transcript2.chromosome
+            and transcript1.strand == transcript2.strand
+            and ranges.overlaps((transcript1.TSS, transcript1.TES), (transcript2.TSS, transcript2.TES)) # The transcripts overlap
+            and ranges.ordered_subset(transcript1.junctions, transcript2.junctions) # Ordered subset?
+            and (not ranges.within_set(transcript1.TSS, transcript2.junctions) or transcript2.monoexonic) # Monoexonics have no junctions so must specify
+            and (not ranges.within_set(transcript1.TES, transcript2.junctions) or transcript2.monoexonic)
+        )
+
     def merge(self):
         parsed = gtf_importer.parse(self.inputPath)
         merged = {}
@@ -38,11 +49,7 @@ class Merge:
             # Check if transcript can be merged
             mergeable = [
                 x for x in parsed
-                if tm.chromosome == x.chromosome and tm.strand == x.strand
-                and ranges.overlaps((tm.TSS, tm.TES), (x.TSS, x.TES)) # The transcripts overlap
-                and ranges.ordered_subset(tm.junctions, x.junctions) # Ordered subset?
-                and (not ranges.within_set(tm.TSS, x.junctions) or x.monoexonic) # Monoexonics have no junctions so must specify
-                and (not ranges.within_set(tm.TES, x.junctions) or x.monoexonic)
+                    if self.ruleset(tm, x)
                 ]
 
             if not mergeable:
