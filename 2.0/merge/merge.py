@@ -32,7 +32,7 @@ class Merge:
             transcript1.chromosome == transcript2.chromosome
             and transcript1.strand == transcript2.strand
             and ranges.overlaps((transcript1.TSS, transcript1.TES), (transcript2.TSS, transcript2.TES)) # The transcripts overlap
-            and (ranges.ordered_subset(transcript1.junctions, transcript2.junctions) or ranges.ordered_subset(transcript2.junctions, transcript1.junctions)) # Ordered subset?
+            and ranges.ordered_subset(transcript1.junctions, transcript2.junctions) # Ordered subset?
             and (not ranges.within_set(transcript1.TSS, transcript2.junctions) or transcript2.monoexonic) # Monoexonics have no junctions so must specify
             and (not ranges.within_set(transcript1.TES, transcript2.junctions) or transcript2.monoexonic)
         )
@@ -69,6 +69,9 @@ class Merge:
                     if self.ruleset(base, x)
                 ]
             
+                if not mergeable:
+                    mergeable = [base]
+
                 lowest_TSS = min([x.TSS for x in mergeable])
                 highest_TES = max([x.TES for x in mergeable])
                 longest = max([x.length for x in mergeable])
