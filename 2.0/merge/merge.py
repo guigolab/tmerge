@@ -1,7 +1,5 @@
 from parsers import Importer
 from parsers import gtf
-from builders.contigs import build as build_contigs
-from builders.merged import build as build_merged
 from models.transcript_model import TranscriptModel
 from output.gtf import write
 from functools import reduce
@@ -39,20 +37,37 @@ class Merge:
             and (not ranges.within_set(transcript1.TES, transcript2.junctions) or transcript2.monoexonic)
         )
 
+    def build_contigs(self, transcripts):
+        while transcripts:
+            id, transcript = next(iter(transcripts.items()))
+            new_contig = Contig({ id: transcript })
+            
+            for i, transcript in enumerate(transcripts.values(), 1):
+                try:
+                    new_contig.add_transcript(transcript)
+                except TypeError:
+                    # If transcript[i] is not on same strand then the next transcript may be on same strand and overlap so try
+                    continue
+                except IndexError:
+                    # If transcript[i] does not overlap then no overlap and on same strand so return
+                    break
+            
+            for k, v in new_contig.transcripts.items():
+                del transcripts[k]
+
+            yield new_contig
+
     def merge(self):
-        parsed = gtf_importer.parse(self.inputPath)
-        for contig in build_contigs(parsed):
+        transcripts = gtf_importer.parse(self.inputPath)
+        for contig in self.build_contigs(transcripts):
             merged = {}
-            for tm in contig.transcripts:
+            for transcript in contig.transcripts.values():
+                base = transcript
                 # Check if transcript can be merged
                 mergeable = [
-                    x for x in parsed
-                    if self.ruleset(tm, x)
-                    ]
-
-                if not mergeable:
-                    merged[tm.id] = tm
-                    continue
+                    x for x in contig.transcripts.values()
+                    if self.ruleset(base, x)
+                ]
 
                 lowest_TSS = min([x.TSS for x in mergeable])
                 highest_TES = max([x.TES for x in mergeable])
@@ -60,7 +75,7 @@ class Merge:
                 new_tm_id = [x for x in mergeable if x.length == longest][0].id # TODO; This may cause collisions
                 
                 # Build the merged model
-                new_tm = TranscriptModel(new_tm_id, tm.chromosome, tm.strand, lowest_TSS, highest_TES)
+                new_tm = TranscriptModel(new_tm_id, base.chromosome, base.strand, lowest_TSS, highest_TES)
                 for m in mergeable:
                     for j in m.junctions:
                         new_tm.add_junction(*j)
@@ -68,6 +83,8 @@ class Merge:
                 new_tm.transcript_count = len(mergeable)
                 if new_tm_id not in merged:
                     merged[new_tm_id] = new_tm
+
+                # Remove all from merged
 
             write(list(merged.values()), self.outputPath)
         
