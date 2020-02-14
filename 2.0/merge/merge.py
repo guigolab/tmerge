@@ -2,11 +2,13 @@ from parsers import Importer
 from parsers import gtf
 from models.transcript_model import TranscriptModel
 from output.gtf import write
-from functools import reduce
+from functools import reduce, partial
+from itertools import product
 from models.contig import Contig
 from merge.hook import Hook
 import os
-from utils import ranges
+from utils import ranges, iterators
+from collections import OrderedDict
 
 HOOKS = ["chromosome_parsed", "contig_built", "contig_merged", "contig_written", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
@@ -33,16 +35,24 @@ class Merge:
             and transcript1.strand == transcript2.strand
             and ranges.overlaps((transcript1.TSS, transcript1.TES), (transcript2.TSS, transcript2.TES)) # The transcripts overlap
             and ranges.ordered_subset(transcript1.junctions, transcript2.junctions) # Ordered subset?
-            and (not ranges.within_set(transcript1.TSS, transcript2.junctions) or transcript2.monoexonic) # Monoexonics have no junctions so must specify
-            and (not ranges.within_set(transcript1.TES, transcript2.junctions) or transcript2.monoexonic)
+            and (
+                (not ranges.within_set(transcript1.TSS, transcript2.junctions))
+                or (not ranges.within_set(transcript2.TSS, transcript1.junctions) or transcript1.monoexonic)
+            )
+            and (
+                (not ranges.within_set(transcript1.TES, transcript2.junctions))
+                or (not ranges.within_set(transcript2.TES, transcript1.junctions) or transcript1.monoexonic)
+            )
         )
 
     def build_contigs(self, transcripts):
         while transcripts:
             id, transcript = next(iter(transcripts.items()))
-            new_contig = Contig({ id: transcript })
+            contig_transcripts = OrderedDict()
+            contig_transcripts[id] = transcript
+            new_contig = Contig(contig_transcripts)
             
-            for i, transcript in enumerate(transcripts.values(), 1):
+            for i, transcript in enumerate(transcripts.values()):
                 try:
                     new_contig.add_transcript(transcript)
                 except TypeError:
@@ -60,38 +70,30 @@ class Merge:
     def merge(self):
         transcripts = gtf_importer.parse(self.inputPath)
         for contig in self.build_contigs(transcripts):
+            # TODO; refactor to use itertools
             merged = {}
-            while contig.transcripts:
-                base = next(iter(contig.transcripts.values()))
-                # Check if transcript can be merged
-                mergeable = [
-                    x for x in contig.transcripts.values()
-                    if self.ruleset(base, x)
-                ]
-            
-                if not mergeable:
-                    mergeable = [base]
+            i = 0
+            i_compare = 1
+            transcripts = list(contig.transcripts.values())
+            while i < len(transcripts) -1:
+                if i_compare > len(transcripts) - 1:
+                    i += 1
+                    i_compare = 0
 
-                lowest_TSS = min([x.TSS for x in mergeable])
-                highest_TES = max([x.TES for x in mergeable])
-                longest = max([x.length for x in mergeable])
-                new_tm_id = [x for x in mergeable if x.length == longest][0].id # TODO; This may cause collisions
-                
-                # Build the merged model
-                new_tm = TranscriptModel(new_tm_id, base.chromosome, base.strand, lowest_TSS, highest_TES)
-                for m in mergeable:
-                    for j in m.junctions:
-                        new_tm.add_junction(*j)
+                if i == i_compare:
+                    i_compare += 1
+                    
+                if self.ruleset(transcripts[i], transcripts[i_compare]):
+                    transcripts[i].TSS = min([transcripts[i].TSS, transcripts[i_compare].TSS])
+                    transcripts[i].TES = max([transcripts[i].TES, transcripts[i_compare].TES])
+                    for j in transcripts[i_compare].junctions:
+                        transcripts[i].add_junction(*j)                    
+                    transcripts[i].transcript_count = transcripts[i].transcript_count + transcripts[i_compare].transcript_count
+                    transcripts.pop(i_compare)
+                else:
+                    i_compare += 1
 
-                new_tm.transcript_count = len(mergeable)
-                if new_tm_id not in merged:
-                    merged[new_tm_id] = new_tm
-
-                # Remove all from merged
-                for t in mergeable:
-                    del contig.transcripts[t.id]
-
-            write(merged.values(), self.outputPath)
+            write(transcripts, self.outputPath)
         
         self.hooks["pre_sort"].exec()
         self._sort()

@@ -16,7 +16,7 @@ def gte(x, range1):
     return x >= range1[1]
 
 # Operations on sets of ranges
-def ordered_subset(base, compare):
+def _ordered_subset(base, compare):
     if len(compare) == 0:
         return True
     if len(compare) > len(base):
@@ -28,6 +28,9 @@ def ordered_subset(base, compare):
         if base[i:i+len(compare)] == compare:
             return True
     return False
+
+def ordered_subset(range1, range2):
+    return _ordered_subset(range1, range2)
 
 def _to_set(func):
     return lambda x, range_set: all(map(partial(func, x), range_set))
