@@ -1,17 +1,21 @@
-from functools import partial
+from functools import partial, lru_cache
 
 # Operations on two ranges
+@lru_cache(128, False)
 def overlaps(range1, range2):
     return range2[1] > range1[0] and range1[1] > range2[0]
 
+@lru_cache(128, False)
 def within(x, range1):
     if len(range1) == 0:
         return False
     return x > range1[0] and x < range1[1]
 
+@lru_cache(128, False)
 def lte(x, range1):
     return x <= range1[0]
 
+@lru_cache(128, False)
 def gte(x, range1):
     return x >= range1[1]
 
