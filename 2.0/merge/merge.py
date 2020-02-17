@@ -34,14 +34,17 @@ class Merge:
             transcript1.chromosome == transcript2.chromosome
             and transcript1.strand == transcript2.strand
             and ranges.overlaps((transcript1.TSS, transcript1.TES), (transcript2.TSS, transcript2.TES)) # The transcripts overlap
-            and ranges.ordered_subset(transcript1.junctions, transcript2.junctions) # Ordered subset?
             and (
-                (not ranges.within_set(transcript1.TSS, transcript2.junctions))
-                or (not ranges.within_set(transcript2.TSS, transcript1.junctions) or transcript1.monoexonic)
+                ranges.ordered_subset(transcript1.junctions, transcript2.junctions) # Ordered subset?
+                or ranges.ordered_subset(transcript2.junctions, transcript1.junctions)
             )
             and (
-                (not ranges.within_set(transcript1.TES, transcript2.junctions))
-                or (not ranges.within_set(transcript2.TES, transcript1.junctions) or transcript1.monoexonic)
+                not ranges.within_any(transcript1.TSS, transcript2.junctions)
+                and not ranges.within_any(transcript1.TES, transcript2.junctions)
+            )
+            and (
+                not ranges.within_any(transcript2.TSS, transcript1.junctions)
+                and not ranges.within_any(transcript2.TES, transcript1.junctions)
             )
         )
 
@@ -75,14 +78,16 @@ class Merge:
             i = 0
             i_compare = 1
             transcripts = list(contig.transcripts.values())
-            while i < len(transcripts) -1:
+            while i < len(transcripts) - 1:
+                if i == i_compare:
+                    i_compare += 1
+                    continue
+                
                 if i_compare > len(transcripts) - 1:
                     i += 1
                     i_compare = 0
-
-                if i == i_compare:
-                    i_compare += 1
-                    
+                    continue
+                
                 if self.ruleset(transcripts[i], transcripts[i_compare]):
                     transcripts[i].TSS = min([transcripts[i].TSS, transcripts[i_compare].TSS])
                     transcripts[i].TES = max([transcripts[i].TES, transcripts[i_compare].TES])
