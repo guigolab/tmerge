@@ -42,7 +42,7 @@ class TranscriptModel:
 
     @TSS.setter
     def TSS(self, TSS):
-        if not ranges.lte_set(TSS, self.junctions):
+        if not ranges.lte_all(TSS, self.junctions):
             raise IndexError("TSS is not less than or equal to the models junctions.")
 
         self._TSS = TSS
@@ -53,7 +53,7 @@ class TranscriptModel:
 
     @TES.setter
     def TES(self, TES):
-        if not ranges.gte_set(TES, self.junctions):
+        if not ranges.gte_all(TES, self.junctions):
             raise IndexError("TES is not greater than or equal to the models junctions.")
 
         self._TES = TES
