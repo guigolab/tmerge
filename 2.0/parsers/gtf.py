@@ -1,5 +1,3 @@
-from models.exon import Exon
-from models.transcript import Transcript
 from parsers import AbstractParser
 
 class Gtf(AbstractParser.AbstractParser):
