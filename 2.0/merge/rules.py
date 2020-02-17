@@ -1,5 +1,5 @@
 from itertools import product
-from functools import reduce, partial
+from functools import reduce, partial, lru_cache
 from utils import ranges
 
 def transcript_overlap(t1, t2):
@@ -27,6 +27,7 @@ def no_first_last_exon_intron_overlap(t1, t2):
         and not ranges.overlaps_any((t2.TSS, t2.junctions[0][0]), t1.junctions)
     )
 
+@lru_cache
 def ruleset(t1, t2):
     return (
         t1.chromosome == t2.chromosome
