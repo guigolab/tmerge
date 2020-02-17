@@ -29,13 +29,18 @@ def _ordered_subset(base, compare):
             return True
     return False
 
-def ordered_subset(range1, range2):
-    return _ordered_subset(range1, range2)
-
-def _to_set(func):
+def _to_set_all(func):
     return lambda x, range_set: all(map(partial(func, x), range_set))
 
-overlaps_set = _to_set(overlaps)
-within_set = _to_set(within)
-lte_set = _to_set(lte)
-gte_set = _to_set(gte)
+def _to_set_any(func):
+    return lambda x, range_set: any(map(partial(func, x), range_set))
+
+overlaps_all = _to_set_all(overlaps)
+within_all = _to_set_all(within)
+lte_all = _to_set_all(lte)
+gte_all = _to_set_all(gte)
+
+overlaps_any = _to_set_any(overlaps)
+within_any = _to_set_any(within)
+lte_any = _to_set_any(lte)
+gte_any = _to_set_any(gte)
