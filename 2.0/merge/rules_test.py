@@ -89,6 +89,14 @@ class TestRules(unittest.TestCase):
         self.assertTrue(no_TSS_TES_overlap(t6, t5))
         self.assertTrue(no_TSS_TES_overlap(t5,t6))
 
+        # Test boundary case where TES has same coordinate as junction
+        t7 = self.faker.tm(0, 0, 0, t1.junctions[1][1])
+        self.assertTrue(no_TSS_TES_overlap(t1, t7))
+
+        # Test boundary case where TSS has same coordinate as junction
+        t8 = self.faker.tm(0, 0, 0, t1.junctions[1][0])
+        self.assertTrue(no_TSS_TES_overlap(t1, t8))
+
     # Test ruleset
     # ============
     def test_same_introns(self):
