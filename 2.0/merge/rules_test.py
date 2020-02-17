@@ -117,3 +117,30 @@ class TestRules(unittest.TestCase):
         monoexon2 = self.faker.tm(0, start=monoexon.TES - 3)
         self.assertTrue(ruleset(monoexon, monoexon2))
         self.assertTrue(ruleset(monoexon2, monoexon))
+
+    def test_last_exon_overlap(self):
+        # Since only considering introns (junctions), it is possible for one transcript's junction chain to be an order subset of anothers
+        # but the last exon to overlap many introns of the others and still have the same TES
+        # so:
+        # ====---====----====----====---====
+        # ====---====----===================
+        t1 = self.faker.tm(10)
+        t2 = copy.deepcopy(t1)
+
+        for i in range(3):
+            t2.remove_junction(*t2.junctions[len(t2.junctions) - 1])
+
+        self.assertFalse(ruleset(t1, t2))
+
+    def test_first_exon_overlap(self):
+        # same as test_last_exon_overlap but for the first exon
+        # so:
+        # ====---====----====----====---====
+        # ===================----====---====
+        t1 = self.faker.tm(10)
+        t2 = copy.deepcopy(t1)
+
+        for i in range(3):
+            t2.remove_junction(*t2.junctions[0])
+
+        self.assertFalse(ruleset(t1, t2))
