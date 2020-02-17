@@ -7,7 +7,7 @@ def overlaps(range1, range2):
 def within(x, range1):
     if len(range1) == 0:
         return False
-    return x >= range1[0] and x <= range1[1]
+    return x > range1[0] and x < range1[1]
 
 def lte(x, range1):
     return x <= range1[0]
