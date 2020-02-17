@@ -4,7 +4,7 @@ class Stats:
         self.contig_count = 0
         self.merged_count = 0
 
-        merger.hooks["chromosome_parsed"].tap(self.add_transcripts)
+        merger.hooks["input_parsed"].tap(self.add_transcripts)
         merger.hooks["contig_built"].tap(self.add_contig)
         merger.hooks["contig_merged"].tap(self.add_merged_transcripts)
         merger.hooks["complete"].tap(self.print)

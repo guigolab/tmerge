@@ -11,7 +11,7 @@ from utils import ranges, iterators
 from collections import OrderedDict
 from merge.rules import ruleset
 
-HOOKS = ["chromosome_parsed", "contig_built", "contig_merged", "contig_written", "pre_sort", "post_sort", "complete"]
+HOOKS = ["input_parsed", "contig_built", "contig_merged", "contig_written", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
 
 class Merge:
@@ -53,9 +53,12 @@ class Merge:
 
     def merge(self):
         transcripts = gtf_importer.parse(self.inputPath)
+        self.hooks["input_parsed"].exec(transcripts)
+
         for contig in self.build_contigs(transcripts):
+            self.hooks["contig_built"].exec(contig)
+
             # TODO; refactor to use itertools
-            merged = {}
             i = 0
             i_compare = 1
             transcripts = list(contig.transcripts.values())
@@ -79,7 +82,13 @@ class Merge:
                 else:
                     i_compare += 1
 
+            contig.transcripts = transcripts
+            self.hooks["contig_merged"].exec(contig)
+
             write(transcripts, self.outputPath)
+
+            self.hooks["contig_written"].exec()
+
         
         self.hooks["pre_sort"].exec()
         self._sort()
