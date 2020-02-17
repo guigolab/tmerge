@@ -71,4 +71,7 @@ class TranscriptModel:
             raise IndexError("Junction out of range of TSS and TES.")
         self._junctions.update({(start, stop)})
 
+    def remove_junction(self, start, stop):
+        self._junctions.remove((start, stop))
+
 

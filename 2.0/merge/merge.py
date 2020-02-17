@@ -9,6 +9,7 @@ from merge.hook import Hook
 import os
 from utils import ranges, iterators
 from collections import OrderedDict
+from merge.rules import ruleset
 
 HOOKS = ["chromosome_parsed", "contig_built", "contig_merged", "contig_written", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
@@ -27,26 +28,6 @@ class Merge:
         self.hooks = {}
         for hook in HOOKS:
             self.hooks[hook] = Hook()
-
-    @staticmethod
-    def ruleset(transcript1, transcript2):
-        return (
-            transcript1.chromosome == transcript2.chromosome
-            and transcript1.strand == transcript2.strand
-            and ranges.overlaps((transcript1.TSS, transcript1.TES), (transcript2.TSS, transcript2.TES)) # The transcripts overlap
-            and (
-                ranges.ordered_subset(transcript1.junctions, transcript2.junctions) # Ordered subset?
-                or ranges.ordered_subset(transcript2.junctions, transcript1.junctions)
-            )
-            and (
-                not ranges.within_any(transcript1.TSS, transcript2.junctions)
-                and not ranges.within_any(transcript1.TES, transcript2.junctions)
-            )
-            and (
-                not ranges.within_any(transcript2.TSS, transcript1.junctions)
-                and not ranges.within_any(transcript2.TES, transcript1.junctions)
-            )
-        )
 
     def build_contigs(self, transcripts):
         while transcripts:
@@ -88,7 +69,7 @@ class Merge:
                     i_compare = 0
                     continue
                 
-                if self.ruleset(transcripts[i], transcripts[i_compare]):
+                if ruleset(transcripts[i], transcripts[i_compare]):
                     transcripts[i].TSS = min([transcripts[i].TSS, transcripts[i_compare].TSS])
                     transcripts[i].TES = max([transcripts[i].TES, transcripts[i_compare].TES])
                     for j in transcripts[i_compare].junctions:
