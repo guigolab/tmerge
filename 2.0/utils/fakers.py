@@ -1,5 +1,3 @@
-from models.transcript import Transcript
-from models.exon import Exon
 from models.contig import Contig
 from models.transcript_model import TranscriptModel
 import uuid
@@ -21,12 +19,13 @@ class Faker():
 
         return tm
 
-    def contig(self, num_transcripts=10, transcripts_seed=None, **kwargs):
-        if not transcripts_seed:
-            transcripts_seed = [self.transcript(**kwargs)]
-        contig = Contig(transcripts_seed)
-        for i in range(0, num_transcripts - len(transcripts_seed)):
-            contig.add_transcript(self.transcript(**kwargs))
+    def contig(self, num_transcripts=10, transcript_length = 100, introns_per_transcript=0):
+        tm = self.tm(introns_per_transcript, length=transcript_length)
+        contig = Contig({ tm.id: tm })
+        tm_start = 0
+        for i in range(0, num_transcripts - 1):
+            contig.add_transcript(self.tm(introns_per_transcript, start=tm_start))
+            tm_start = tm_start + transcript_length
 
         return contig
 
