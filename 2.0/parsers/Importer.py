@@ -1,4 +1,3 @@
-from models.exon import Exon
 from models.transcript_model import TranscriptModel
 from collections import OrderedDict
 
