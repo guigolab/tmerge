@@ -15,11 +15,12 @@ HOOKS = ["input_parsed", "contig_built", "contig_merged", "contig_written", "pre
 gtf_importer = Importer.Importer(gtf.Gtf())
 
 class Merge:
-    def __init__(self, inputPath, outputPath):
+    def __init__(self, inputPath, outputPath, tolerance = 0):
         self._add_hooks()
         
         self.inputPath = inputPath
         self.outputPath = outputPath
+        self.tolerance = tolerance
 
         # Overwrite file contents first
         open(self.outputPath, 'w').close()
@@ -72,11 +73,16 @@ class Merge:
                     i_compare = 0
                     continue
                 
-                if ruleset(transcripts[i], transcripts[i_compare]):
+                if ruleset(transcripts[i], transcripts[i_compare], self.tolerance):
                     transcripts[i].TSS = min([transcripts[i].TSS, transcripts[i_compare].TSS])
                     transcripts[i].TES = max([transcripts[i].TES, transcripts[i_compare].TES])
                     for j in transcripts[i_compare].junctions:
-                        transcripts[i].add_junction(*j)                    
+                        overlapping_junctions = ranges.find_overlapping(j, transcripts[i].junctions, self.tolerance)
+                        junction_start = max([j[0]] + [x[0] for x in overlapping_junctions])
+                        junction_end = min([j[1]] + [x[1] for x in overlapping_junctions])
+                        for j2 in overlapping_junctions:
+                            transcripts[i].remove_junction(*j2)
+                        transcripts[i].add_junction(junction_start, junction_end)                    
                     transcripts[i].transcript_count = transcripts[i].transcript_count + transcripts[i_compare].transcript_count
                     transcripts.pop(i_compare)
                 else:

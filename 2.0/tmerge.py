@@ -13,10 +13,11 @@ parser = argparse.ArgumentParser(description=description)
 parser.add_argument("-i", "--input", help="Input GTF file")
 parser.add_argument("-o", "--output", help="Output GTF file")
 parser.add_argument("-s", "--stats", action="store_true", help="Provide statistics for merged transcripts.")
+parser.add_argument("-t", "--tolerance", help="Exon overhang tolerance", type=int)
 
 args = parser.parse_args()
 
-merger = Merge(args.input, args.output)
+merger = Merge(args.input, args.output, args.tolerance)
 
 if args.stats:
     Stats(merger)

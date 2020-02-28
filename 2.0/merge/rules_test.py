@@ -1,5 +1,5 @@
 import unittest
-from merge.rules import transcript_overlap, no_TSS_TES_overlap, ordered_subset, ruleset
+from merge.rules import transcript_overlap, TSS_TES_overlap, ordered_subset, ruleset, first_last_exon_intron_overlap
 from utils.fakers import Faker
 import copy
 
@@ -59,53 +59,55 @@ class TestRules(unittest.TestCase):
         t1 = self.faker.tm(2)
         t2 = copy.deepcopy(t1)
 
-        self.assertTrue(no_TSS_TES_overlap(t1, t2))
+        self.assertFalse(TSS_TES_overlap(t1, t2))
 
         t3 = copy.deepcopy(t1)
         t3.remove_junction(*t3.junctions[0])
         t3.TSS = t1.junctions[0][0] + 5
 
-        self.assertFalse(no_TSS_TES_overlap(t1, t3))
-        self.assertFalse(no_TSS_TES_overlap(t3, t1))
+        self.assertTrue(TSS_TES_overlap(t1, t3))
+        self.assertTrue(TSS_TES_overlap(t3, t1))
 
         t4 = copy.deepcopy(t1)
         t4.remove_junction(*t4.junctions[len(t4.junctions) - 1])
         t4.TES = t1.junctions[len(t1.junctions) - 1][1] - 5
 
-        self.assertFalse(no_TSS_TES_overlap(t1, t4))
-        self.assertFalse(no_TSS_TES_overlap(t4, t1))
+        self.assertTrue(TSS_TES_overlap(t1, t4))
+        self.assertTrue(TSS_TES_overlap(t4, t1))
 
         # test with a monoexon
         t5 = self.faker.tm(0, 0, t1.junctions[0][0] + 5, 50)
 
-        self.assertFalse(no_TSS_TES_overlap(t1, t5))
-        self.assertFalse(no_TSS_TES_overlap(t1, t5))
+        self.assertTrue(TSS_TES_overlap(t1, t5))
+        self.assertTrue(TSS_TES_overlap(t1, t5))
 
         # Test with two monoexons
         t6 = copy.deepcopy(t5)
         t6.TES = 200
         t6.TSS = 150
 
-        self.assertTrue(no_TSS_TES_overlap(t6, t5))
-        self.assertTrue(no_TSS_TES_overlap(t5,t6))
+        self.assertFalse(TSS_TES_overlap(t6, t5))
+        self.assertFalse(TSS_TES_overlap(t5,t6))
 
         # Test boundary case where TES has same coordinate as junction
         t7 = self.faker.tm(0, 0, 0, t1.junctions[1][1])
-        self.assertTrue(no_TSS_TES_overlap(t1, t7))
+        self.assertTrue(TSS_TES_overlap(t1, t7))
 
         # Test boundary case where TSS has same coordinate as junction
-        t8 = self.faker.tm(0, 0, 0, t1.junctions[1][0])
-        self.assertTrue(no_TSS_TES_overlap(t1, t8))
+        t8 = self.faker.tm(0, 0, t1.junctions[1][0], 50)
+        self.assertTrue(TSS_TES_overlap(t1, t8))
 
     # Test ruleset
     # ============
     def test_same_introns(self):
-        t1 = self.faker.tm(10)
+        t1 = self.faker.tm(4)
         t2 = copy.deepcopy(t1)
+        print(t1.junctions, t2.junctions)
 
         self.assertTrue(ruleset(t1, t2))
 
         t2.add_junction(t1.junctions[2][1] + 50, t1.junctions[2][1] + 100)
+        print(t1.junctions, t2.junctions)
         self.assertFalse(ruleset(t1, t2))
 
     def test_monoexonic_overlap(self):
@@ -127,7 +129,7 @@ class TestRules(unittest.TestCase):
         self.assertTrue(ruleset(monoexon2, monoexon))
 
     def test_last_exon_overlap(self):
-        # Since only considering introns (junctions), it is possible for one transcript's junction chain to be an order subset of anothers
+        # Since only considering introns (junctions), it is possible for one transcript's junction chain to be an ordered subset of anothers
         # but the last exon to overlap many introns of the others and still have the same TES
         # so:
         # ====---====----====----====---====
@@ -152,3 +154,42 @@ class TestRules(unittest.TestCase):
             t2.remove_junction(*t2.junctions[0])
 
         self.assertFalse(ruleset(t1, t2))
+
+    def test_tolerance(self):
+        t1 = self.faker.tm(3)
+        t2 = copy.deepcopy(t1)
+        t3 = copy.deepcopy(t1)
+
+        for junction in t2.junctions:
+            t2.add_junction(junction[0] - 1, junction[1] + 1)
+            t2.remove_junction(*junction)
+        
+        self.assertFalse(ruleset(t1, t2, 0))
+        self.assertTrue(ruleset(t1, t2, 5))
+
+        for junction in t3.junctions:
+            t3.add_junction(junction[0] - 5, junction[1] + 5)
+            t3.remove_junction(*junction)
+
+        self.assertFalse(ruleset(t1, t2, 0))
+        self.assertTrue(ruleset(t1, t3, 5))
+        self.assertFalse(ruleset(t1,t3, 4))
+
+        # Test monoexon merges
+        # E.g. should merge when tolerance set to > zero value:
+        # =====-----=====-----=====-----
+        #          ======
+        t4 = self.faker.tm(0, 0, t1.junctions[1][1] - 5, 20)
+        self.assertTrue(ruleset(t1, t4, 5))
+        self.assertFalse(ruleset(t1, t4, 0))
+
+        # Test merge with TSS "staircase" and some exon overhanging
+        t5 = self.faker.tm(4)
+        t6 = copy.deepcopy(t5)
+
+        for junction in t6.junctions:
+            t6.add_junction(junction[0], junction[1] + 5)
+            t6.remove_junction(*junction)
+
+        t6.TSS = t6.TSS + 20
+        self.assertTrue(ruleset(t5,t6, 5))
