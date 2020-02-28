@@ -200,7 +200,7 @@ class TestRules(unittest.TestCase):
 
         # Test merge with TSS "staircase"
         t6 = self.faker.tm(4)
-        t7 = copy.deepcopy(t5)
+        t7 = copy.deepcopy(t6)
 
         t7.TSS = t6.TSS + 20
         self.assertTrue(ruleset(t6,t7, 5))
