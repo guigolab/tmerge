@@ -158,38 +158,49 @@ class TestRules(unittest.TestCase):
     def test_tolerance(self):
         t1 = self.faker.tm(3)
         t2 = copy.deepcopy(t1)
-        t3 = copy.deepcopy(t1)
 
         for junction in t2.junctions:
             t2.add_junction(junction[0] - 1, junction[1] + 1)
             t2.remove_junction(*junction)
         
         self.assertFalse(ruleset(t1, t2, 0))
-        self.assertTrue(ruleset(t1, t2, 5))
+        self.assertFalse(ruleset(t1, t2, 5))
 
-        for junction in t3.junctions:
-            t3.add_junction(junction[0] - 5, junction[1] + 5)
-            t3.remove_junction(*junction)
+        # Should merge when one of the terminal exons overhangs
+        # ======----========----====
+        #            =======---====
+        t3 = self.faker.tm(0, 50, t1.junctions[0][1] + 5)
+        t3.add_junction(t1.junctions[1][0], t1.junctions[1][1])
+        t3.add_junction(*t1.junctions[2])
+        self.assertTrue(ruleset(t1,t3,0))
+        self.assertTrue(ruleset(t1,t3,5))
 
-        self.assertFalse(ruleset(t1, t2, 0))
-        self.assertTrue(ruleset(t1, t3, 5))
-        self.assertFalse(ruleset(t1,t3, 4))
+        # Should merge when one of the terminal exons underhangs
+        # ======----========----====
+        #          =========----====
+        t4 = self.faker.tm(0, 50, t1.junctions[1][1] - 5)
+        t4.add_junction(t1.junctions[1][0], t1.junctions[1][1])
+        t4.add_junction(*t1.junctions[2])
+        self.assertFalse(ruleset(t1,t4,0))
+        self.assertTrue(ruleset(t1,t4,5))
+        
 
         # Test monoexon merges
         # E.g. should merge when tolerance set to > zero value:
-        # =====-----=====-----=====-----
+        # =====-----=====-----=====-----====
         #          ======
         t4 = self.faker.tm(0, 0, t1.junctions[1][1] - 5, 20)
         self.assertTrue(ruleset(t1, t4, 5))
         self.assertFalse(ruleset(t1, t4, 0))
+        # =====-----=====-----=====-----====
+        #             ====
+        t5 = self.faker.tm(0, 0, t1.junctions[1][0] - 15, 20)
+        self.assertTrue(ruleset(t1, t5, 5))
+        self.assertFalse(ruleset(t1, t5, 0))
 
-        # Test merge with TSS "staircase" and some exon overhanging
-        t5 = self.faker.tm(4)
-        t6 = copy.deepcopy(t5)
+        # Test merge with TSS "staircase"
+        t6 = self.faker.tm(4)
+        t7 = copy.deepcopy(t5)
 
-        for junction in t6.junctions:
-            t6.add_junction(junction[0], junction[1] + 5)
-            t6.remove_junction(*junction)
-
-        t6.TSS = t6.TSS + 20
-        self.assertTrue(ruleset(t5,t6, 5))
+        t7.TSS = t6.TSS + 20
+        self.assertTrue(ruleset(t6,t7, 5))
