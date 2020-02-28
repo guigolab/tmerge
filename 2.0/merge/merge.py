@@ -15,12 +15,14 @@ HOOKS = ["input_parsed", "contig_built", "contig_merged", "contig_written", "pre
 gtf_importer = Importer.Importer(gtf.Gtf())
 
 class Merge:
-    def __init__(self, inputPath, outputPath, tolerance = 0):
+    def __init__(self, inputPath, outputPath, tolerance = 0, end_fuzz = 0, min_read_support = 1):
         self._add_hooks()
         
         self.inputPath = inputPath
         self.outputPath = outputPath
         self.tolerance = tolerance
+        self.end_fuzz = end_fuzz
+        self.min_read_support = min_read_support
 
         # Overwrite file contents first
         open(self.outputPath, 'w').close()
@@ -73,22 +75,34 @@ class Merge:
                     i_compare = 0
                     continue
                 
-                if ruleset(transcripts[i], transcripts[i_compare], self.tolerance):
-                    transcripts[i].TSS = min([transcripts[i].TSS, transcripts[i_compare].TSS])
-                    transcripts[i].TES = max([transcripts[i].TES, transcripts[i_compare].TES])
-                    for j in transcripts[i_compare].junctions:
-                        overlapping_junctions = ranges.find_overlapping(j, transcripts[i].junctions, self.tolerance)
+                t1 = transcripts[i]
+                t2 = transcripts[i_compare]
+
+                if ruleset(t1, t2, self.tolerance):
+                    t1.full_length_count = max([t1, t2], key=lambda x: x.length).full_length_count
+                    t1.TSS = min([t1.TSS, t2.TSS])
+                    t1.TES = max([t1.TES, t2.TES])
+                    for j in t2.junctions:
+                        # TODO: Make this more efficient. Don't need to compare start and stop of junctions since must all be same.
+                        overlapping_junctions = ranges.find_overlapping(j, t1.junctions, self.tolerance)
                         junction_start = max([j[0]] + [x[0] for x in overlapping_junctions])
                         junction_end = min([j[1]] + [x[1] for x in overlapping_junctions])
                         for j2 in overlapping_junctions:
-                            transcripts[i].remove_junction(*j2)
-                        transcripts[i].add_junction(junction_start, junction_end)                    
-                    transcripts[i].transcript_count = transcripts[i].transcript_count + transcripts[i_compare].transcript_count
+                            t1.remove_junction(*j2)
+                        t1.add_junction(junction_start, junction_end)
+
+                    t1.transcript_count = t1.transcript_count + t2.transcript_count
+
+                    if ranges.within(t2.TSS, (t1.TSS - self.end_fuzz, t1.TSS), exclusive=False) and ranges.within(t2.TES, (t1.TES, t1.TES + self.end_fuzz), exclusive=False):
+                        t1.full_length_count += 1
+
                     transcripts.pop(i_compare)
                 else:
                     i_compare += 1
 
+            transcripts = [t for t in transcripts if t.full_length_count >= self.min_read_support]
             contig.transcripts = transcripts
+
             self.hooks["contig_merged"].exec(contig)
 
             write(transcripts, self.outputPath)

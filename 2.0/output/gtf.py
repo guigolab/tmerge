@@ -14,7 +14,7 @@ def write(transcripts, output_path):
                     "0",
                     transcript.strand,
                     ".",
-                    f"gene_id \"{transcript.id}\"; transcript_id \"{transcript.id}\"; MERGED_COUNT \"{transcript.transcript_count}\";"
+                    f"gene_id \"{transcript.id}\"; transcript_id \"{transcript.id}\"; MERGED_COUNT \"{transcript.transcript_count}\"; FULL_LENGTH_SUPPORT_COUNT \"{transcript.full_length_count}\";"
                 ]
 
                 f.write("\t".join(data))
@@ -41,7 +41,7 @@ def write(transcripts, output_path):
                         "0",
                         transcript.strand,
                         ".",
-                        f"gene_id \"{transcript.id}\"; transcript_id \"{transcript.id}\"; MERGED_COUNT \"{transcript.transcript_count}\";"
+                        f"gene_id \"{transcript.id}\"; transcript_id \"{transcript.id}\"; MERGED_COUNT \"{transcript.transcript_count}\"; FULL_LENGTH_SUPPORT_COUNT \"{transcript.full_length_count}\";"
                     ]
 
                     f.write("\t".join(data))
