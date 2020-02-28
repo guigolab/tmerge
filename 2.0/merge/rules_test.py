@@ -107,8 +107,8 @@ class TestRules(unittest.TestCase):
         self.assertTrue(ruleset(t1, t2))
 
         t2.add_junction(t1.junctions[2][1] + 50, t1.junctions[2][1] + 100)
-        print(t1.junctions, t2.junctions)
         self.assertFalse(ruleset(t1, t2))
+        self.assertFalse(ruleset(t2, t1))
 
     def test_monoexonic_overlap(self):
         polyexon = self.faker.tm(5)
