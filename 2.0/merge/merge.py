@@ -83,13 +83,7 @@ class Merge:
                     t1.TSS = min([t1.TSS, t2.TSS])
                     t1.TES = max([t1.TES, t2.TES])
                     for j in t2.junctions:
-                        # TODO: Make this more efficient. Don't need to compare start and stop of junctions since must all be same.
-                        overlapping_junctions = ranges.find_overlapping(j, t1.junctions, self.tolerance)
-                        junction_start = max([j[0]] + [x[0] for x in overlapping_junctions])
-                        junction_end = min([j[1]] + [x[1] for x in overlapping_junctions])
-                        for j2 in overlapping_junctions:
-                            t1.remove_junction(*j2)
-                        t1.add_junction(junction_start, junction_end)
+                        t1.add_junction(*j)
 
                     t1.transcript_count = t1.transcript_count + t2.transcript_count
 
