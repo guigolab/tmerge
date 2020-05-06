@@ -9,12 +9,14 @@ class Contig:
     start: int
     end: int
     strand: str
+    meta: dict
     
     def __init__(self, seed_transcript):
         self.start = seed_transcript.TSS
         self.end = seed_transcript.TES
         self.strand = seed_transcript.strand
         self._transcripts = {}
+        self.meta = {}
 
         self.add_transcript(seed_transcript)
 

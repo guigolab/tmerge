@@ -22,17 +22,11 @@ class ReadSupport():
         )
 
     def add_full_length_count(self, target, support):
-        target.full_length_count = support
+        target.meta.full_length_count = support
         return target
 
     def remove_unsupported(self, contig):
         for t in contig.transcripts:
             self.add_full_length_count(t, self.get_full_length_support(t, contig.transcripts))
         
-        without_support = [
-            t for t in contig.transcripts
-            if t.full_length_count < self.min_read_support
-        ]
-        
-        for t in without_support:
-            contig.remove_transcript(t)        
+        map(lambda t: contig.remove_transcript(t), [t for t in contig.transcripts if t.meta.full_length_count < self.min_read_support])

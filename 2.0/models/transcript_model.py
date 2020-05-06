@@ -6,7 +6,7 @@ from functools import partial
 
 
 class TranscriptModel:
-    __slots__ = ["id", "chromosome", "strand", "_TSS", "_TES", "_junctions", "transcript_count", "full_length_count"]
+    __slots__ = ["id", "chromosome", "strand", "_TSS", "_TES", "_junctions", "transcript_count", "meta"]
 
     id: str
     strand: str
@@ -15,7 +15,7 @@ class TranscriptModel:
     _TES: int
     _junctions: MutableSet[Tuple[int, int]]
     transcript_count: int
-    full_length_count: int
+    meta: dict
     
     def __init__(self, id, chromosome, strand, TSS, TES):
         if TSS >= TES:
@@ -29,6 +29,7 @@ class TranscriptModel:
         self._junctions = set()
         self.transcript_count = 1
         self.full_length_count = 1
+        self.meta = {}
 
     @property
     def length(self):
