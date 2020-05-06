@@ -2,6 +2,7 @@
 
 from merge.merge import Merge
 from plugins.stats import Stats
+from plugins.read_support import ReadSupport
 import getopt, argparse
 
 unix_options = "ho:i:s"
@@ -16,11 +17,14 @@ parser.add_argument("-s", "--stats", action="store_true", help="Provide statisti
 parser.add_argument("-t", "--tolerance", help="Exon overhang tolerance", type=int, default=0)
 parser.add_argument("-f", "--support", help="Minimum read support", type=int, default=0)
 parser.add_argument("-e", "--fuzz", help="end fuzz", type=int, default=0)
+parser.add_argument("-p", "--processes", help="Processes", type=int, default=None)
 
 
 args = parser.parse_args()
 
-merger = Merge(args.input, args.output, args.tolerance, args.fuzz, args.support)
+merger = Merge(args.input, args.output, args.tolerance, args.processes)
+
+ReadSupport(merger, args.fuzz, args.support)
 
 if args.stats:
     Stats(merger)

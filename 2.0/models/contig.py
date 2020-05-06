@@ -3,21 +3,28 @@ from utils import ranges
 
 @dataclass
 class Contig:
-    __slots__ = ["transcripts", "start", "end", "strand"]
+    __slots__ = ["_transcripts", "start", "end", "strand"]
 
-    transcripts: dict
+    _transcripts: dict
     start: int
     end: int
     strand: str
     
-    def __init__(self, transcripts):
-        if not all([t.strand for t in transcripts.values()]):
-            raise TypeError("Exons must be on the same strand.")
+    def __init__(self, seed_transcript):
+        self.start = seed_transcript.TSS
+        self.end = seed_transcript.TES
+        self.strand = seed_transcript.strand
+        self._transcripts = {}
 
-        self.start = min((a.TSS for a in transcripts.values()))
-        self.end = max((a.TES for a in transcripts.values()))
-        self.transcripts = transcripts
-        self.strand = next(iter(transcripts.values())).strand
+        self.add_transcript(seed_transcript)
+
+    @property
+    def transcripts(self):
+        return list(self._transcripts.values())
+
+    @transcripts.setter
+    def transcripts(self, transcript):
+        raise Error("Use add_transcript instead")
 
     def add_transcript(self, transcript):
         if not self.are_same_strand(transcript):
@@ -25,10 +32,13 @@ class Contig:
         if not self.overlaps(transcript):
             raise IndexError("Transcript not within contig.")
         
-        self.transcripts[transcript.id] = transcript
+        self._transcripts[transcript.id] = transcript
         
         if transcript.TES > self.end:
             self.end = transcript.TES
+
+    def remove_transcript(self, transcript):
+        del self._transcripts[transcript.id]
 
     def overlaps(self, transcript):
         return ranges.overlaps((self.start, self.end), (transcript.TSS, transcript.TES))
@@ -43,4 +53,4 @@ class Contig:
         return self.strand == transcript.strand
         
     def has_transcript(self, transcript):
-        return transcript in self.transcripts
+        return transcript in self._transcripts

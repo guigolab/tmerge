@@ -46,4 +46,5 @@ class Importer():
                 #     print(e)
                 #     pass
         
+        # TODO: Should return an iterator
         return transcript_models

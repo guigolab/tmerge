@@ -10,19 +10,19 @@ import os
 from utils import ranges, iterators
 from collections import OrderedDict
 from merge.rules import ruleset
+from multiprocessing import Pool, Manager, Process, cpu_count
 
-HOOKS = ["input_parsed", "contig_built", "contig_merged", "contig_written", "pre_sort", "post_sort", "complete"]
+HOOKS = ["input_parsed", "contig_built", "contig_merged", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
 
 class Merge:
-    def __init__(self, inputPath, outputPath, tolerance = 0, end_fuzz = 0, min_read_support = 1):
+    def __init__(self, inputPath, outputPath, tolerance = 0, processes=None):
         self._add_hooks()
         
         self.inputPath = inputPath
         self.outputPath = outputPath
         self.tolerance = tolerance
-        self.end_fuzz = end_fuzz
-        self.min_read_support = min_read_support
+        self.processes = processes
 
         # Overwrite file contents first
         open(self.outputPath, 'w').close()
@@ -33,13 +33,12 @@ class Merge:
             self.hooks[hook] = Hook()
 
     def build_contigs(self, transcripts):
+        # Note: transripts parameter here is a dict but contig.transcripts is a list
         while transcripts:
             id, transcript = next(iter(transcripts.items()))
-            contig_transcripts = OrderedDict()
-            contig_transcripts[id] = transcript
-            new_contig = Contig(contig_transcripts)
-            
-            for i, transcript in enumerate(transcripts.values()):
+            new_contig = Contig(transcript)
+
+            for i, transcript in enumerate(transcripts.values(), start=1):
                 try:
                     new_contig.add_transcript(transcript)
                 except TypeError:
@@ -48,61 +47,77 @@ class Merge:
                 except IndexError:
                     # If transcript[i] does not overlap then no overlap and on same strand so return
                     break
-            
-            for k, v in new_contig.transcripts.items():
+
+            # TODO: Should not be accessing _transcripts
+            for k, v in new_contig._transcripts.items():
                 del transcripts[k]
 
+            self.hooks["contig_built"].exec(new_contig)
             yield new_contig
+        
+        return
+            
+
+    def merge_contig(self, contig):
+        # TODO: refactor to use itertools
+        i = 0
+        i_compare = 1
+        merged_transcripts = contig.transcripts
+        while i < len(merged_transcripts) - 1:
+            if i == i_compare:
+                i_compare += 1
+                continue
+            
+            if i_compare > len(merged_transcripts) - 1:
+                i += 1
+                i_compare = 0
+                continue
+            
+            t1 = merged_transcripts[i]
+            t2 = merged_transcripts[i_compare]
+
+            if ruleset(t1, t2, self.tolerance):
+                t1.TSS = min([t1.TSS, t2.TSS])
+                t1.TES = max([t1.TES, t2.TES])
+                for j in t2.junctions:
+                    t1.add_junction(*j)
+
+                t1.transcript_count = t1.transcript_count + t2.transcript_count
+
+                # Will replace
+                contig.add_transcript(t1)
+
+                contig.remove_transcript(t2)
+                merged_transcripts.pop(i_compare)
+            else:
+                i_compare += 1
+
+        self.hooks["contig_merged"].exec(contig)
+
+        return contig
 
     def merge(self):
-        transcripts = gtf_importer.parse(self.inputPath)
-        self.hooks["input_parsed"].exec(transcripts)
+        transcripts = gtf_importer.parse(self.inputPath) # dict
+        # TODO: refactor here so don't have to convert to list. Best to use an iterator for transcripts everywhere
+        self.hooks["input_parsed"].exec(list(transcripts.values()))
+        mg = Manager()
+        q = mg.Queue()
+        # Put the writer in its own thread
+        writer = Process(target=write, args=(q, self.outputPath))
+        writer.start()
 
-        for contig in self.build_contigs(transcripts):
-            self.hooks["contig_built"].exec(contig)
+        with Pool(processes=self.processes) as p:
+            contigs = p.imap_unordered(self.merge_contig, self.build_contigs(transcripts))
+            
+            for contig in contigs:
+                # Put the contig to be written in the queue to avoid collisions
+                q.put(contig)
+            
+            p.close()
+            p.join()
 
-            # TODO; refactor to use itertools
-            i = 0
-            i_compare = 1
-            transcripts = list(contig.transcripts.values())
-            while i < len(transcripts) - 1:
-                if i == i_compare:
-                    i_compare += 1
-                    continue
-                
-                if i_compare > len(transcripts) - 1:
-                    i += 1
-                    i_compare = 0
-                    continue
-                
-                t1 = transcripts[i]
-                t2 = transcripts[i_compare]
-
-                if ruleset(t1, t2, self.tolerance):
-                    t1.full_length_count = max([t1, t2], key=lambda x: x.length).full_length_count
-                    t1.TSS = min([t1.TSS, t2.TSS])
-                    t1.TES = max([t1.TES, t2.TES])
-                    for j in t2.junctions:
-                        t1.add_junction(*j)
-
-                    t1.transcript_count = t1.transcript_count + t2.transcript_count
-
-                    if ranges.within(t2.TSS, (t1.TSS - self.end_fuzz, t1.TSS), exclusive=False) and ranges.within(t2.TES, (t1.TES, t1.TES + self.end_fuzz), exclusive=False):
-                        t1.full_length_count += 1
-
-                    transcripts.pop(i_compare)
-                else:
-                    i_compare += 1
-
-            transcripts = [t for t in transcripts if t.full_length_count >= self.min_read_support]
-            contig.transcripts = transcripts
-
-            self.hooks["contig_merged"].exec(contig)
-
-            write(transcripts, self.outputPath)
-
-            self.hooks["contig_written"].exec()
-
+            q.put("KILL")
+            writer.join()
         
         self.hooks["pre_sort"].exec()
         self._sort()
