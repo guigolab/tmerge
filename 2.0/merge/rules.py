@@ -43,7 +43,7 @@ def ruleset(t1, t2, tolerance = 0):
         t1.chromosome == t2.chromosome
         and t1.strand == t2.strand
         and transcript_overlap(t1, t2)
-        and ordered_subset(t1, t2)
         and not TSS_TES_overlap(t1, t2, tolerance)
+        and ordered_subset(t1, t2)
         and not first_last_exon_intron_overlap(t1,t2, tolerance)
     )
