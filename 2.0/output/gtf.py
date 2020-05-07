@@ -10,7 +10,7 @@ def write(queue, output_path):
             if msg == "KILL":
                 return
 
-            transcripts = msg.transcripts
+            transcripts = msg
 
             for transcript in transcripts:
                 if transcript.monoexonic:
