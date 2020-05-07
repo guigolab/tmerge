@@ -13,7 +13,7 @@ class TranscriptModel:
     chromosome: str
     _TSS: int
     _TES: int
-    _junctions: MutableSet[Tuple[int, int]]
+    _junctions: [Tuple[int, int]] # TODO: used sortedcontainers here
     transcript_count: int
     contains: [str]
     meta: dict
@@ -27,7 +27,7 @@ class TranscriptModel:
         self.strand = strand
         self._TSS = TSS
         self._TES = TES
-        self._junctions = set()
+        self._junctions = []
         self.transcript_count = 1
         self.contains = [self.id]
         self.meta = {}
@@ -64,7 +64,7 @@ class TranscriptModel:
 
     @property
     def junctions(self):
-        return sorted(list(self._junctions), key=lambda x: x[0]) # Sort by start
+        return self._junctions
 
     @junctions.setter
     def junctions(self):
@@ -73,9 +73,12 @@ class TranscriptModel:
     def add_junction(self, start, stop):
         if not ranges.overlaps((start, stop), (self.TSS, self.TES)):
             raise IndexError("Junction out of range of TSS and TES.")
-        self._junctions.update({(start, stop)})
+        self._junctions.append((start, stop))
+        self._junctions = sorted(self._junctions, key=lambda x: x[0])
 
     def remove_junction(self, start, stop):
         self._junctions.remove((start, stop))
+        self._junctions = sorted(self._junctions, key=lambda x: x[0])
+
 
 
