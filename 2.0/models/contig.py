@@ -3,7 +3,7 @@ from utils import ranges
 
 @dataclass
 class Contig:
-    __slots__ = ["_transcripts", "start", "end", "strand"]
+    __slots__ = ["_transcripts", "start", "end", "strand", "meta"]
 
     _transcripts: dict
     start: int
@@ -22,7 +22,7 @@ class Contig:
 
     @property
     def transcripts(self):
-        return list(self._transcripts.values())
+        return iter(self._transcripts.values())
 
     @transcripts.setter
     def transcripts(self, transcript):
@@ -40,7 +40,13 @@ class Contig:
             self.end = transcript.TES
 
     def remove_transcript(self, transcript):
-        del self._transcripts[transcript.id]
+        self.remove_transcript_by_id(transcript.id)
+
+    def remove_transcript_by_id(self, t_id):
+        try:
+            del self._transcripts[t_id]
+        except KeyError:
+            raise KeyError(f"Transcript {t_id} not in contig.")
 
     def overlaps(self, transcript):
         return ranges.overlaps((self.start, self.end), (transcript.TSS, transcript.TES))

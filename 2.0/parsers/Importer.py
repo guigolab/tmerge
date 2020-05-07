@@ -6,7 +6,7 @@ class Importer():
         self.parser = parser
 
     def parse(self, path):
-        transcript_models = OrderedDict()
+        transcript_models = OrderedDict() # Order is very important so that contigs are built properly
         with open(path, "r") as f:
             for line in f:            
                 # try:
@@ -46,5 +46,4 @@ class Importer():
                 #     print(e)
                 #     pass
         
-        # TODO: Should return an iterator
-        return transcript_models
+        return transcript_models.values()

@@ -3,7 +3,7 @@ from parsers import gtf
 from models.transcript_model import TranscriptModel
 from output.gtf import write
 from functools import reduce, partial
-from itertools import product
+from itertools import product, combinations
 from models.contig import Contig
 from merge.hook import Hook
 import os
@@ -33,14 +33,18 @@ class Merge:
             self.hooks[hook] = Hook()
 
     def build_contigs(self, transcripts):
-        # Note: transripts parameter here is a dict but contig.transcripts is a list
-        while transcripts:
-            id, transcript = next(iter(transcripts.items()))
-            new_contig = Contig(transcript)
+        added_ids = []
+        for i, transcript in enumerate(transcripts):
+            if transcript.id in added_ids:
+                continue
 
-            for i, transcript in enumerate(transcripts.values(), start=1):
+            new_contig = Contig(transcript)
+            added_ids.append(transcript.id)
+
+            for i, transcript in enumerate([t for t in transcripts if t.id not in added_ids], start=1):
                 try:
                     new_contig.add_transcript(transcript)
+                    added_ids.append(transcript.id)
                 except TypeError:
                     # If transcript[i] is not on same strand then the next transcript may be on same strand and overlap so try
                     continue
@@ -48,58 +52,53 @@ class Merge:
                     # If transcript[i] does not overlap then no overlap and on same strand so return
                     break
 
-            # TODO: Should not be accessing _transcripts
-            for k, v in new_contig._transcripts.items():
-                del transcripts[k]
-
             self.hooks["contig_built"].exec(new_contig)
             yield new_contig
         
         return
             
+    """
+    Attempts to merge right into left in-place.
+    Returns True if merge succeeded, otherwise returns False.
+    """
+    def merge_transcripts(self, left, right):
+        if ruleset(left, right, self.tolerance):
+            left.TSS = min([left.TSS, right.TSS])
+            left.TES = max([left.TES, right.TES])
+            for j in right.junctions:
+                left.add_junction(*j)
+
+            left.transcript_count = left.transcript_count + right.transcript_count
+            left.contains.extend(right.contains)
+            left.contains.append(right.id)
+
+            return True
+        
+        return False
+
 
     def merge_contig(self, contig):
-        # TODO: refactor to use itertools
-        i = 0
-        i_compare = 1
-        merged_transcripts = contig.transcripts
-        while i < len(merged_transcripts) - 1:
-            if i == i_compare:
-                i_compare += 1
-                continue
+        # From left to right, merge all the transcripts
+        # Go again until contig.transcripts is exhausted
+        # Hint: this works because contig.transcripts returns a new iterator each time
+
+        merged = set()
+        for left in contig.transcripts:
+            for right in contig.transcripts:
+                if left.id is not right.id and right.id not in merged and left.id not in merged:
+                    if self.merge_transcripts(left, right):
+                        merged.add(right.id)
+
+        for t_id in merged:
+            contig.remove_transcript_by_id(t_id)
             
-            if i_compare > len(merged_transcripts) - 1:
-                i += 1
-                i_compare = 0
-                continue
-            
-            t1 = merged_transcripts[i]
-            t2 = merged_transcripts[i_compare]
-
-            if ruleset(t1, t2, self.tolerance):
-                t1.TSS = min([t1.TSS, t2.TSS])
-                t1.TES = max([t1.TES, t2.TES])
-                for j in t2.junctions:
-                    t1.add_junction(*j)
-
-                t1.transcript_count = t1.transcript_count + t2.transcript_count
-
-                # Will replace
-                contig.add_transcript(t1)
-
-                contig.remove_transcript(t2)
-                merged_transcripts.pop(i_compare)
-            else:
-                i_compare += 1
-
         self.hooks["contig_merged"].exec(contig)
 
         return contig
 
     def merge(self):
-        transcripts = gtf_importer.parse(self.inputPath) # dict
-        # TODO: refactor here so don't have to convert to list. Best to use an iterator for transcripts everywhere
-        self.hooks["input_parsed"].exec(list(transcripts.values()))
+        transcripts = gtf_importer.parse(self.inputPath)
+        self.hooks["input_parsed"].exec(transcripts)
         mg = Manager()
         q = mg.Queue()
         # Put the writer in its own thread
@@ -110,6 +109,7 @@ class Merge:
             contigs = p.imap_unordered(self.merge_contig, self.build_contigs(transcripts))
             
             for contig in contigs:
+                print("contig")
                 # Put the contig to be written in the queue to avoid collisions
                 q.put(contig)
             
