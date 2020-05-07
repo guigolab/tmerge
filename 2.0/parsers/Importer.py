@@ -46,4 +46,4 @@ class Importer():
                 #     print(e)
                 #     pass
         
-        return transcript_models.values()
+        return transcript_models
