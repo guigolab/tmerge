@@ -73,12 +73,14 @@ class TranscriptModel:
     def add_junction(self, start, stop):
         if not ranges.overlaps((start, stop), (self.TSS, self.TES)):
             raise IndexError("Junction out of range of TSS and TES.")
-        self._junctions.append((start, stop))
-        self._junctions = sorted(self._junctions, key=lambda x: x[0])
+        if (start, stop) not in self._junctions:
+            self._junctions.append((start, stop))
+            self._junctions = sorted(self._junctions, key=lambda x: x[0])
 
     def remove_junction(self, start, stop):
-        self._junctions.remove((start, stop))
-        self._junctions = sorted(self._junctions, key=lambda x: x[0])
+        if (start, stop) in self._junctions:
+            self._junctions.remove((start, stop))
+            self._junctions = sorted(self._junctions, key=lambda x: x[0])
 
 
 
