@@ -11,6 +11,7 @@ from utils import ranges, iterators
 from collections import OrderedDict
 from merge.rules import ruleset
 from multiprocessing import Pool, Manager, Process, cpu_count
+from collections import deque
 
 HOOKS = ["input_parsed", "contig_built", "contig_merged", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
@@ -34,26 +35,34 @@ class Merge:
 
     def build_contigs(self, transcripts):
         added_ids = []
-        for i, transcript in enumerate(transcripts):
-            if transcript.id in added_ids:
+        items = transcripts.items()
+        for first_id, first_transcript in items:
+            if first_id in added_ids:
                 continue
 
-            new_contig = Contig(transcript)
-            added_ids.append(transcript.id)
+            cur_contig = deque([first_transcript])
+            cur_TSS = first_transcript.TSS
+            cur_TES = first_transcript.TES
+            
+            added_ids.append(first_id)
 
-            for i, transcript in enumerate([t for t in transcripts if t.id not in added_ids], start=1):
-                try:
-                    new_contig.add_transcript(transcript)
-                    added_ids.append(transcript.id)
-                except TypeError:
+            for t_id, transcript in items:
+                if t_id in added_ids:
+                    continue
+                if first_transcript.strand != transcript.strand:
                     # If transcript[i] is not on same strand then the next transcript may be on same strand and overlap so try
                     continue
-                except IndexError:
-                    # If transcript[i] does not overlap then no overlap and on same strand so return
+                if not ranges.overlaps((cur_TSS, cur_TES), (transcript.TSS, transcript.TES)):
+                     # If transcript[i] does not overlap then no overlap and on same strand so return
                     break
 
-            self.hooks["contig_built"].exec(new_contig)
-            yield new_contig
+                cur_contig.append(transcript)
+                added_ids.append(t_id)
+                if transcript.TES > cur_TES:
+                    cur_TES = transcript.TES
+                
+            # self.hooks["contig_built"].exec(cur_contig)
+            yield cur_contig
         
         return
             
@@ -77,24 +86,33 @@ class Merge:
         return False
 
 
-    def merge_contig(self, contig):
-        # From left to right, merge all the transcripts
-        # Go again until contig.transcripts is exhausted
-        # Hint: this works because contig.transcripts returns a new iterator each time
+    def merge_contig(self, transcripts):
+        first_id = None
+        first_fail_merged_id = None
 
-        merged = set()
-        for left in contig.transcripts:
-            for right in contig.transcripts:
-                if left.id is not right.id and right.id not in merged and left.id not in merged:
-                    if self.merge_transcripts(left, right):
-                        merged.add(right.id)
+        while True:
+            try:
+                left = transcripts.popleft()
+                right = transcripts.popleft()
+                if not first_id:
+                    first_id = left.id
 
-        for t_id in merged:
-            contig.remove_transcript_by_id(t_id)
+                if left.id == first_id and right.id == first_fail_merged_id:
+                    break
+
+                if self.merge_transcripts(left, right):
+                    transcripts.appendleft(left)
+                else:
+                    if not first_fail_merged_id:
+                        first_fail_merged_id = right.id
+                    transcripts.appendleft(left)
+                    transcripts.append(right)
+            except IndexError:
+                break
+        
+        return transcripts
             
-        self.hooks["contig_merged"].exec(contig)
 
-        return contig
 
     def merge(self):
         transcripts = gtf_importer.parse(self.inputPath)
@@ -105,19 +123,23 @@ class Merge:
         writer = Process(target=write, args=(q, self.outputPath))
         writer.start()
 
-        with Pool(processes=self.processes) as p:
-            contigs = p.imap_unordered(self.merge_contig, self.build_contigs(transcripts))
-            
-            for contig in contigs:
-                print("contig")
-                # Put the contig to be written in the queue to avoid collisions
-                q.put(contig)
-            
-            p.close()
-            p.join()
+        for contig in self.build_contigs(transcripts):
+            print("contig")
+            q.put(self.merge_contig(contig))
 
-            q.put("KILL")
-            writer.join()
+        # with Pool(processes=self.processes) as p:
+        #     contigs = p.imap_unordered(self.merge_contig, self.build_contigs(transcripts))
+            
+        #     for contig in contigs:
+        #         print("contig")
+        #         # Put the contig to be written in the queue to avoid collisions
+        #         q.put(contig)
+            
+        #     p.close()
+        #     p.join()
+
+        q.put("KILL")
+        writer.join()
         
         self.hooks["pre_sort"].exec()
         self._sort()
