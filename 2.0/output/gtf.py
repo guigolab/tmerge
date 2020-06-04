@@ -1,62 +1,74 @@
+from functools import reduce
+
+def write_exon(f, tm_id, transcript, start, end):
+    meta_info = reduce(lambda x,y: f"{x} {y}", map(lambda i: f"{i[0]} \"{i[1]}\";", transcript.meta.items())) if transcript.meta else ""
+
+    data = [
+        transcript.chromosome,
+        "TMERGE",
+        "exon",
+        str(start),
+        str(end),
+        "0",
+        transcript.strand,
+        ".",
+        f"gene_id \"{tm_id}\"; transcript_id \"{tm_id}\"; contains {', '.join(transcript.contains)}; contains_count \"{transcript.transcript_count}\"; {meta_info}"
+    ]
+
+    f.write("\t".join(data))
+    f.write("\n")
+
 """
 Reads from a queue of contigs
 """
-
-def write(queue, output_path):
+def write(q, output_path):
     with open(output_path, "w") as f:
-        while True:
-            msg = queue.get()
+        id_count = 0
+        while 1:
+            transcript = q.get()
+            if transcript == "DONE":
+                break
 
-            if msg == "KILL":
-                return
+            if transcript.monoexonic:
+                start = transcript.TSS
+                end = transcript.TES
+                write_exon(f, f"TM_{id_count}", transcript, start, end)
 
-            transcripts = msg
+            else:
+                t_junctions = transcript.sorted_junctions
+                for idx in range(0, len(t_junctions) + 1):
+                    if idx == 0:
+                        start = transcript.TSS
+                        end = t_junctions[0][0]
+                    elif idx >= len(transcript.junctions):
+                        start = t_junctions[idx - 1][1]
+                        end = transcript.TES
+                    else:
+                        start = t_junctions[idx - 1][1]
+                        end = t_junctions[idx][0]
 
-            for transcript in transcripts:
-                if transcript.monoexonic:
+                    write_exon(f, f"TM_{id_count}", transcript, start, end)
+            
+            id_count += 1
+
+def write_transcript(transcript, output_path):
+    with open(output_path, "a") as f:
+        if transcript.monoexonic:
+            start = transcript.TSS
+            end = transcript.TES
+            write_exon(f, f"TM_{transcript.id}", transcript, start, end)
+
+        else:
+            t_junctions = transcript.sorted_junctions
+            for idx in range(0, len(t_junctions) + 1):
+                if idx == 0:
                     start = transcript.TSS
+                    end = t_junctions[0][0]
+                elif idx >= len(transcript.junctions):
+                    start = t_junctions[idx - 1][1]
                     end = transcript.TES
-
-                    data = [
-                        transcript.chromosome,
-                        "TMERGE",
-                        "exon",
-                        str(start),
-                        str(end),
-                        "0",
-                        transcript.strand,
-                        ".",
-                        f"gene_id \"{transcript.id}\"; transcript_id \"{transcript.id}\"; MERGED_COUNT \"{transcript.transcript_count}\";"
-                    ]
-
-                    f.write("\t".join(data))
-                    f.write("\n")
-                    f.flush()
-
                 else:
-                    for idx in range(0, len(transcript.junctions) + 1):
-                        if idx == 0:
-                            start = transcript.TSS
-                            end = transcript.junctions[0][0]
-                        elif idx >= len(transcript.junctions):
-                            start = transcript.junctions[idx - 1][1]
-                            end = transcript.TES
-                        else:
-                            start = transcript.junctions[idx - 1][1]
-                            end = transcript.junctions[idx][0]
+                    start = t_junctions[idx - 1][1]
+                    end = t_junctions[idx][0]
 
-                        data = [
-                            transcript.chromosome,
-                            "TMERGE",
-                            "exon",
-                            str(start),
-                            str(end),
-                            "0",
-                            transcript.strand,
-                            ".",
-                            f"gene_id \"{transcript.id}\"; transcript_id \"{transcript.id}\"; MERGED_COUNT \"{transcript.transcript_count}\";"
-                        ]
-
-                        f.write("\t".join(data))
-                        f.write("\n")
-                        f.flush()
+                write_exon(f, f"TM_{transcript.id}", transcript, start, end)
