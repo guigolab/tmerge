@@ -15,7 +15,8 @@ from threading import Thread
 from queue import Queue
 from collections import deque
 
-HOOKS = ["chromosome_parsed", "contig_built", "contig_merged" "merging_complete", "pre_sort", "post_sort", "complete"]
+
+HOOKS = ["chromosome_parsed", "transcript_added", "contig_built", "contig_merged" "merging_complete", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
 
 class Merge:
@@ -42,6 +43,7 @@ class Merge:
             cur_TES = t1.TES
             cur_strand = t1.strand
             cur_contig = [t1]
+            self.hooks["transcript_added"].exec(t1)
             
             for t2 in transcripts.values():
                 if cur_strand != t2.strand:
@@ -52,6 +54,7 @@ class Merge:
                     break
                 
                 cur_contig.append(t2)
+                self.hooks["transcript_added"].exec(t2)
 
                 if t2.TES > cur_TES:
                     cur_TES = t2.TES
@@ -60,7 +63,6 @@ class Merge:
                 del transcripts[t.id]
 
             yield cur_contig
-        
             
     """
     Attempts to merge right into left in-place.
@@ -142,7 +144,7 @@ class Merge:
                 merged = self.merge_contig(unremoved)
 
                 self.hooks["contig_merged"].exec(merged)
-                
+
                 for transcript in self.merge_contig(unremoved):
                     q.put(transcript)
         
