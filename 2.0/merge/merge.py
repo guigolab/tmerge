@@ -82,7 +82,7 @@ class Merge:
         return False
 
     def merge_contig(self, transcripts):
-        # This might be another method that may be quicker and cleaner
+        # This might be another method that may be quicker and cleaner but needs investigating as doesnt work quite right. Skips some transcripts
         # if len(transcripts) == 1:
         #     # No need to merge if <= one in contig
         #     yield transcripts[0]
