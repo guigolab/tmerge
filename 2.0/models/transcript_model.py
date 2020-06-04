@@ -1,22 +1,23 @@
 from dataclasses import dataclass
-from typing import List, MutableSet, Tuple
+from typing import List, MutableSet, Tuple, Set
 from dataclass_type_validator import TypeValidationError
 from utils import ranges
 from functools import partial
 
 
 class TranscriptModel:
-    __slots__ = ["id", "chromosome", "strand", "_TSS", "_TES", "_junctions", "transcript_count", "contains", "meta"]
+    __slots__ = ["id", "chromosome", "strand", "_TSS", "_TES", "_junctions", "transcript_count", "contains", "meta", "_removed"]
 
     id: str
     strand: str
     chromosome: str
     _TSS: int
     _TES: int
-    _junctions: [Tuple[int, int]] # TODO: used sortedcontainers here
+    _junctions: Set[Tuple[int, int]] # TODO: used sortedcontainers here
     transcript_count: int
     contains: [str]
     meta: dict
+    _removed: bool
     
     def __init__(self, id, chromosome, strand, TSS, TES):
         if TSS >= TES:
@@ -27,10 +28,11 @@ class TranscriptModel:
         self.strand = strand
         self._TSS = TSS
         self._TES = TES
-        self._junctions = []
+        self._junctions = set()
         self.transcript_count = 1
         self.contains = [self.id]
         self.meta = {}
+        self._removed = False
 
     @property
     def length(self):
@@ -74,13 +76,23 @@ class TranscriptModel:
         if not ranges.overlaps((start, stop), (self.TSS, self.TES)):
             raise IndexError("Junction out of range of TSS and TES.")
         if (start, stop) not in self._junctions:
-            self._junctions.append((start, stop))
-            self._junctions = sorted(self._junctions, key=lambda x: x[0])
+            self._junctions.add((start, stop))
 
     def remove_junction(self, start, stop):
         if (start, stop) in self._junctions:
             self._junctions.remove((start, stop))
-            self._junctions = sorted(self._junctions, key=lambda x: x[0])
+
+    @property
+    def sorted_junctions(self):
+        return sorted(self._junctions, key=lambda x: x[0])
+
+    @property
+    def removed(self):
+        return self._removed
+
+    # Used in plugins. Plugins can only alter transcripts in place so this is used a removal flag
+    def remove(self):
+        self._removed = True
 
 
 
