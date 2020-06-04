@@ -12,7 +12,7 @@ def write_exon(f, tm_id, transcript, start, end):
         "0",
         transcript.strand,
         ".",
-        f"gene_id \"{tm_id}\"; transcript_id \"{tm_id}\"; contains {', '.join(transcript.contains)}; contains_count \"{transcript.transcript_count}\"; {meta_info}"
+        f"gene_id \"{tm_id}\"; transcript_id \"{tm_id}\"; {meta_info}"
     ]
 
     f.write("\t".join(data))

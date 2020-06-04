@@ -1,4 +1,3 @@
-from utils import ranges
 from functools import reduce
 
 class SplicedLengths():

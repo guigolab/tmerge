@@ -16,7 +16,7 @@ from queue import Queue
 from collections import deque
 
 
-HOOKS = ["chromosome_parsed", "transcript_added", "contig_built", "contig_merged", "merging_complete", "pre_sort", "post_sort", "complete"]
+HOOKS = ["chromosome_parsed", "transcript_added", "contig_built", "transcripts_merged", "contig_merged", "merging_complete", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
 
 class Merge:
@@ -74,9 +74,7 @@ class Merge:
             for j in right.junctions:
                 left.add_junction(*j)
 
-            left.transcript_count = left.transcript_count + right.transcript_count
-            left.contains.extend(right.contains)
-            left.contains.append(right.id)
+            self.hooks["transcripts_merged"].exec(left, right)
 
             return True
 

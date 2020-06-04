@@ -4,6 +4,7 @@ from merge.merge import Merge
 from plugins.stats import Stats
 from plugins.read_support import ReadSupport
 from plugins.spliced_lengths import SplicedLengths
+from plugins.merged_info import MergedInfo
 import getopt, argparse
 
 unix_options = "ho:i:s"
@@ -27,6 +28,7 @@ merger = Merge(args.input, args.output, args.tolerance, args.processes, args.spe
 
 ReadSupport(merger, args.fuzz, args.support, args.speed)
 SplicedLengths(merger, args.speed)
+MergedInfo(merger, args.speed)
 
 if args.stats:
     Stats(merger)
