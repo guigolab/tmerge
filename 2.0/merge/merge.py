@@ -15,7 +15,7 @@ from threading import Thread
 from queue import Queue
 from collections import deque
 
-HOOKS = ["input_parsed", "new_contig", "transcript_added", "transcripts_will_merge", "transcripts_have_merged", "transcripts_have_not_merged", "contig_built", "pre_sort", "post_sort", "complete"]
+HOOKS = ["new_contig", "transcript_added", "contig_built", "merging_complete", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
 
 class Merge:
@@ -142,6 +142,7 @@ class Merge:
                     q.put(transcript)
         
         q.join()
+        self.hooks["merging_complete"].exec()
 
         # Method for using multiprocessing
         # mg = Manager()
