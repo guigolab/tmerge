@@ -5,6 +5,7 @@ from plugins.stats import Stats
 from plugins.read_support import ReadSupport
 from plugins.spliced_lengths import SplicedLengths
 from plugins.merged_info import MergedInfo
+from plugins.splice_site_scoring import SpliceSiteScoring
 import getopt, argparse
 
 unix_options = "ho:i:s"
@@ -21,6 +22,11 @@ parser.add_argument("--support", help="Minimum read support", type=int, default=
 parser.add_argument("--fuzz", help="end fuzz", type=int, default=0)
 parser.add_argument("--speed", help="Speed mode. Enables options that forgoe sensitivity and precision for faster merge time.", action="store_true")
 parser.add_argument("--processes", help="The number of processes (threads) allowed to run. Must be greater than 2. If left unspecified, then will use the maximum number available.", type=int, default=None)
+parser.add_argument("--spliceScoring", action="store_true")
+parser.add_argument("--acceptor")
+parser.add_argument("--donor")
+parser.add_argument("--fasta")
+
 
 args = parser.parse_args()
 
@@ -29,6 +35,9 @@ merger = Merge(args.input, args.output, args.tolerance, args.processes, args.spe
 ReadSupport(merger, args.fuzz, args.support, args.speed)
 SplicedLengths(merger, args.speed)
 MergedInfo(merger, args.speed)
+
+if args.spliceScoring:
+    SpliceSiteScoring(merger, args.donor, args.acceptor, args.fasta)
 
 if args.stats:
     Stats(merger)
