@@ -1,9 +1,9 @@
 from parsers import Importer
 from parsers import gtf
 from models.transcript_model import TranscriptModel
-from output.gtf import write
+from output.gtf import write, write_transcript
 from functools import reduce, partial
-from itertools import product, combinations
+from itertools import combinations, permutations, filterfalse, chain, groupby
 from models.contig import Contig
 from merge.hook import Hook
 import os
@@ -13,11 +13,11 @@ from merge.rules import ruleset
 from multiprocessing import Pool, Manager, Process, cpu_count
 from collections import deque
 
-HOOKS = ["input_parsed", "contig_built", "tm_pre_merge", "tm_merged", "tm_not_merged", "contig_merged", "pre_sort", "post_sort", "complete"]
+HOOKS = ["input_parsed", "new_contig", "transcript_added", "transcripts_will_merge", "transcripts_have_merged", "transcripts_have_not_merged", "contig_built", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
 
 class Merge:
-    def __init__(self, inputPath, outputPath, tolerance = 0, processes=None):
+    def __init__(self, inputPath, outputPath, tolerance = 0, processes=None, speed=False):
         self._add_hooks()
         
         self.inputPath = inputPath
@@ -34,46 +34,42 @@ class Merge:
             self.hooks[hook] = Hook()
 
     def build_contigs(self, transcripts):
-        added_ids = []
-        items = transcripts.items()
-
-        for first_id, first_transcript in items:
-            if first_id in added_ids:
-                continue
-
-            cur_contig = [first_transcript]
-            cur_TSS = first_transcript.TSS
-            cur_TES = first_transcript.TES
+        while transcripts:
+            t1 = next(iter(transcripts.values()))
+            cur_TSS = t1.TSS
+            cur_TES = t1.TES
+            cur_strand = t1.strand
+            cur_chrom = t1.chromosome
+            cur_contig = [t1]
+            self.hooks["transcript_added"].exec(t1)
             
-            added_ids.append(first_id)
-
-            for t_id, transcript in items:
-                if t_id in added_ids:
+            for t2 in transcripts.values():
+                if cur_strand != t2.strand:
+                    # If t2 is not on same strand then the next transcript may be on same strand and overlap so try
                     continue
-                if first_transcript.strand != transcript.strand:
-                    # If transcript[i] is not on same strand then the next transcript may be on same strand and overlap so try
-                    continue
-                if not ranges.overlaps((cur_TSS, cur_TES), (transcript.TSS, transcript.TES)):
-                     # If transcript[i] does not overlap then no overlap and on same strand so return
+                if not ranges.overlaps((cur_TSS, cur_TES), (t2.TSS, t2.TES)):
+                    # If t2 does not overlap then no overlap and on same strand so stop iteration
                     break
-
-                cur_contig.append(transcript)
-                added_ids.append(t_id)
-                if transcript.TES > cur_TES:
-                    cur_TES = transcript.TES
+                if cur_chrom != t2.chromosome:
+                    break
                 
+                cur_contig.append(t2)
+                self.hooks["transcript_added"].exec(t2)
+
+                if t2.TES > cur_TES:
+                    cur_TES = t2.TES
+
+            for t in cur_contig[1:]:
+                del transcripts[t.id]
+
             self.hooks["contig_built"].exec(cur_contig)
             yield cur_contig
         
-        return
             
     """
     Attempts to merge right into left in-place.
-    Returns True if merge succeeded, otherwise returns False.
     """
     def merge_transcripts(self, left, right):
-        self.hooks["tm_pre_merge"].exec(left, right)
-        
         if ruleset(left, right, self.tolerance):
             left.TSS = min([left.TSS, right.TSS])
             left.TES = max([left.TES, right.TES])
@@ -84,54 +80,33 @@ class Merge:
             left.contains.extend(right.contains)
             left.contains.append(right.id)
 
-            self.hooks["tm_merged"].exec(left, right)
+            return True
 
-            return (left, None)
-
-        self.hooks["tm_not_merged"].exec(left, right)
-
-        return (left, right)
-
+        return False
 
     def merge_contig(self, transcripts):
-        # first_id = None
-        # first_fail_merged_id = None
-        # merged = []
-        # for left in transcripts:
-        #     for right in transcripts:
-        #         if left not in merged and right not in merged:
-        #             self.merge_transcripts(left, right)
-        #     merged.append(left)
+        # This might be another method that may be quicker and cleaner
+        # if len(transcripts) == 1:
+        #     # No need to merge if <= one in contig
+        #     yield transcripts[0]
+        #     return
 
-        # # while True:
-        # #     try:
-        # #         left = transcripts.popleft()
-        # #         right = transcripts.popleft()
-        # #         if not first_id:
-        # #             first_id = left.id
+        # merged = set()
+        # last = None
+        # for (left, right) in combinations(transcripts, 2):
+        #     if left in merged or right in merged:
+        #         continue
+        #     if not last:
+        #         last = left
+        #     if left is not last:
+        #         yield last
+        #         last = left
+        #     if self.merge_transcripts(left, right):
+        #         merged.add(right)
 
-        # #         if left.id == first_id and right.id == first_fail_merged_id:
-        # #             break
+        # if last:
+        #     yield last
 
-        # #         (merge_result, fail) = self.merge_transcripts(left, right)
-        # #         if not fail:
-        # #             transcripts.appendleft(merge_result)
-        # #         else:
-        # #             if not first_fail_merged_id:
-        # #                 first_fail_merged_id = fail.id
-        # #             transcripts.appendleft(merge_result)
-        # #             transcripts.append(fail)
-        # #     except IndexError:
-        # #         break
-        
-        # for t in transcripts:
-        #     if t.meta["full_length_count"] > 1:
-        #         print(t.meta)
-
-        # self.hooks["contig_merged"].exec(transcripts)
-        # return transcripts
-
-        # TODO: refactor to use itertools
         i = 0
         i_compare = 1
         while i < len(transcripts) - 1:
@@ -139,51 +114,67 @@ class Merge:
                 i_compare += 1
                 continue
             
+            t1 = transcripts[i]
+
             if i_compare > len(transcripts) - 1:
                 i += 1
                 i_compare = 0
                 continue
 
-            t1 = transcripts[i]
             t2 = transcripts[i_compare]
 
-            (merged, fail) = self.merge_transcripts(t1, t2)
-
-            if not fail:
+            if self.merge_transcripts(t1, t2):
                 transcripts.pop(i_compare)
             else:
                 i_compare += 1
 
-        self.hooks["contig_merged"].exec(transcripts)
         return transcripts
-
 
     def merge(self):
         transcripts = gtf_importer.parse(self.inputPath)
         self.hooks["input_parsed"].exec(transcripts)
-        mg = Manager()
-        q = mg.Queue()
-        # Put the writer in its own thread
-        writer = Process(target=write, args=(q, self.outputPath))
-        writer.start()
 
-        with Pool(processes=self.processes) as p:
-            contigs = p.imap_unordered(self.merge_contig, self.build_contigs(transcripts))
-            
-            for contig in contigs:
-                # Put the contig to be written in the queue to avoid collisions
-                q.put(contig)
-            
-            p.close()
-            p.join()
+        # Overwrite file contents first
+        open(self.outputPath, 'w').close()
+        for contig in self.build_contigs(transcripts):
+            unremoved = [x for x in contig if not x.removed]
+            for transcript in self.merge_contig(unremoved):
+                write_transcript(transcript, self.outputPath)
 
-        q.put("KILL")
-        writer.join()
+        # Method for using multiprocessing
+        # mg = Manager()
+        # q = mg.Queue()
+
+        # writer = Process(target=write, args=(q, self.outputPath))
+
+        # num_processes = self.processes if self.processes else cpu_count()
+        # print(f"Running on {num_processes} threads.")
         
+        # contigs = list(self.build_contigs(transcripts))
+        # print(f"Built {len(contigs)} contigs")
+
+        # pool = []
+        # for contig in contigs:
+        #     p = Process(target=self.merge_contig, args = (contig,q))
+        #     p.start()
+        #     pool.append(p)
+
+        # for p in pool:
+        #     p.join()
+
+        # q.put("DONE")
+        # writer.join()
+
+        # # with Pool(processes=num_processes) as p:
+        # #     p.map(partial(self.merge_contig, q=q), contigs)
+        # #     q.put("DONE")
+            
+        # # write(q, self.outputPath)
+
         self.hooks["pre_sort"].exec()
         self._sort()
         self.hooks["post_sort"].exec()
         self.hooks["complete"].exec()
 
     def _sort(self):
-        os.system(f"sort -n -k4 -o \"{self.outputPath}\" \"{self.outputPath}\"")
+        os.system(f"sort -k 1,1 -k4,4n -o \"{self.outputPath}\" \"{self.outputPath}\"")
