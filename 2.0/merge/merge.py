@@ -39,7 +39,6 @@ class Merge:
             cur_TSS = t1.TSS
             cur_TES = t1.TES
             cur_strand = t1.strand
-            cur_chrom = t1.chromosome
             cur_contig = [t1]
             self.hooks["transcript_added"].exec(t1)
             
@@ -49,8 +48,6 @@ class Merge:
                     continue
                 if not ranges.overlaps((cur_TSS, cur_TES), (t2.TSS, t2.TES)):
                     # If t2 does not overlap then no overlap and on same strand so stop iteration
-                    break
-                if cur_chrom != t2.chromosome:
                     break
                 
                 cur_contig.append(t2)
@@ -131,15 +128,13 @@ class Merge:
         return transcripts
 
     def merge(self):
-        transcripts = gtf_importer.parse(self.inputPath)
-        self.hooks["input_parsed"].exec(transcripts)
-
         # Overwrite file contents first
         open(self.outputPath, 'w').close()
-        for contig in self.build_contigs(transcripts):
-            unremoved = [x for x in contig if not x.removed]
-            for transcript in self.merge_contig(unremoved):
-                write_transcript(transcript, self.outputPath)
+        for chromosome in gtf_importer.parse(self.inputPath):
+            for contig in self.build_contigs(chromosome):
+                unremoved = [x for x in contig if not x.removed]
+                for transcript in self.merge_contig(unremoved):
+                    write_transcript(transcript, self.outputPath)
 
         # Method for using multiprocessing
         # mg = Manager()

@@ -6,7 +6,7 @@ class Importer():
         self.parser = parser
 
     def parse(self, path):
-        transcript_models = OrderedDict() # Order is very important so that contigs are built properly
+        transcript_models = OrderedDict() # Maintains order as well as uniqueness. Like an ordered set
         with open(path, "r") as f:
             prev_chrom = None
             prev_start = None
@@ -27,8 +27,17 @@ class Importer():
                     if (prev_start and prev_chrom) and (prev_chrom == chromosome and start < prev_start):
                         raise TypeError("Input must be sorted by chromosome then start position.")
 
+                    if not prev_chrom:
+                        prev_chrom = chromosome
+
+                    if prev_chrom != chromosome:
+                        # Can yield the chromosome and start afresh
+                        yield transcript_models
+                        prev_chrom = chromosome
+                        transcript_models = OrderedDict()
+
+
                     prev_start = start
-                    prev_chrom = chromosome
 
                     if self.parser.get_transcript_id() not in transcript_models:
                         transcript_models[id] = TranscriptModel(
@@ -58,5 +67,5 @@ class Importer():
                 except Exception as e:
                     # TODO: Handle this exception
                     raise IOError(f"Error in file parsing at line {num}: {e}")
-        
-        return transcript_models
+
+        yield transcript_models
