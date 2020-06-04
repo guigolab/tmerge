@@ -1,7 +1,7 @@
 from parsers import Importer
 from parsers import gtf
 from models.transcript_model import TranscriptModel
-from output.gtf import write, write_transcript
+from output.gtf import write
 from functools import reduce, partial
 from itertools import combinations, permutations, filterfalse, chain, groupby
 from models.contig import Contig
@@ -11,6 +11,8 @@ from utils import ranges, iterators
 from collections import OrderedDict
 from merge.rules import ruleset
 from multiprocessing import Pool, Manager, Process, cpu_count
+from threading import Thread
+from queue import Queue
 from collections import deque
 
 HOOKS = ["input_parsed", "new_contig", "transcript_added", "transcripts_will_merge", "transcripts_have_merged", "transcripts_have_not_merged", "contig_built", "pre_sort", "post_sort", "complete"]
@@ -128,13 +130,18 @@ class Merge:
         return transcripts
 
     def merge(self):
-        # Overwrite file contents first
-        open(self.outputPath, 'w').close()
+        q = Queue()
+
+        # Use multithreading and a FIFO queue for slight speed increase
+        Thread(target=write, args=(q, self.outputPath), daemon=True).start()
+
         for chromosome in gtf_importer.parse(self.inputPath):
             for contig in self.build_contigs(chromosome):
                 unremoved = [x for x in contig if not x.removed]
                 for transcript in self.merge_contig(unremoved):
-                    write_transcript(transcript, self.outputPath)
+                    q.put(transcript)
+        
+        q.join()
 
         # Method for using multiprocessing
         # mg = Manager()

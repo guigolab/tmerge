@@ -17,6 +17,7 @@ def write_exon(f, tm_id, transcript, start, end):
 
     f.write("\t".join(data))
     f.write("\n")
+    f.flush()
 
 """
 Reads from a queue of contigs
@@ -24,10 +25,8 @@ Reads from a queue of contigs
 def write(q, output_path):
     with open(output_path, "w") as f:
         id_count = 0
-        while 1:
+        while True:
             transcript = q.get()
-            if transcript == "DONE":
-                break
 
             if transcript.monoexonic:
                 start = transcript.TSS
@@ -51,24 +50,4 @@ def write(q, output_path):
             
             id_count += 1
 
-def write_transcript(transcript, output_path):
-    with open(output_path, "a") as f:
-        if transcript.monoexonic:
-            start = transcript.TSS
-            end = transcript.TES
-            write_exon(f, f"TM_{transcript.id}", transcript, start, end)
-
-        else:
-            t_junctions = transcript.sorted_junctions
-            for idx in range(0, len(t_junctions) + 1):
-                if idx == 0:
-                    start = transcript.TSS
-                    end = t_junctions[0][0]
-                elif idx >= len(transcript.junctions):
-                    start = t_junctions[idx - 1][1]
-                    end = transcript.TES
-                else:
-                    start = t_junctions[idx - 1][1]
-                    end = t_junctions[idx][0]
-
-                write_exon(f, f"TM_{transcript.id}", transcript, start, end)
+            q.task_done()
