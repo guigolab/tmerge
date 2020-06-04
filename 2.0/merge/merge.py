@@ -16,7 +16,7 @@ from queue import Queue
 from collections import deque
 
 
-HOOKS = ["chromosome_parsed", "transcript_added", "contig_built", "contig_merged" "merging_complete", "pre_sort", "post_sort", "complete"]
+HOOKS = ["chromosome_parsed", "transcript_added", "contig_built", "contig_merged", "merging_complete", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
 
 class Merge:
