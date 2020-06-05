@@ -1,6 +1,9 @@
 from functools import reduce
 
 class SplicedLengths():
+    """
+    Add attributes for mature RNA lengths.
+    """
     def __init__(self, hooks, **kwargs):
         hooks["contig_merged"].tap(self.add_spliced_lengths)
 

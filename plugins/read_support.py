@@ -1,6 +1,21 @@
 from functools import reduce
 
 class ReadSupport():
+    """
+    Compute read support for each transcript and filter by min_read_support.
+
+    Read support is the number of reads in the input (as defined by the exon/intron structure) that match a gien transcript.
+
+    Parameters
+    ----------
+    hooks: dict
+    end_fuzz: int
+        Tolerated fuzziness of 5' and 3' ends for two reads to be considered equivalent when computing read support
+    min_read_support: int
+        Minimum number of reads that must support a given transcript. Any transcripts with read support below this threshold will be removed.
+    speed: bool
+        When True, favour speed over sensitivity & precision
+    """
     def __init__(self, hooks, end_fuzz = 0, min_read_support = 1, speed = False, **kwargs):
         self.end_fuzz = end_fuzz
         self.min_read_support = min_read_support

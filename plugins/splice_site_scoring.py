@@ -2,6 +2,29 @@ from __future__ import division, print_function
 import os, struct, math, sys
 from pyfaidx import Fasta
 
+
+"""
+Format of coefficient files:
+
+The donor coefficient file consists of 4^7 numbers stored in little-endian double format.
+The index into this file for a particular splice candidate is computed from the string
+of 3 bases 5' of the GT concatenated to the 4 bases 3' of the GT. The index is a base-4
+number created from the indices of the bases of this base string in ACGT with the first
+being most significant. For example, the index for a potential splice site context of:
+ACG-GT-TACG is 0*4^6 + 1*4^5 + 2*4^4 + 3*4^3 + 0*4^2 + 1*4^1 + 2*4^0
+Once the coefficient is extracted, the score is
+	log(16.302010666666664 * coeff, 2)
+
+The acceptor coefficient file consists of 9 concatenated sequences containing
+4^7, 4^7, 4^7, 4^7, 4^7, 4^3, 4^4, 4^3, and 4^4 numbers. The relevant context
+is 18 bases 5' of the AG concatenated to 3 bases 3'. The 9 coefficients are extracted
+from these arrays using indices computed from the substrings starting at the following
+offsets with the following lengths:
+0 7, 7 7, 14 7 (including the 3 bases 3' of the AG), 4 7, 11 7, 4 3, 7 4, 11 3, 14 4
+Once these 9 coefficients are found, the score is:
+    log(16.3482025 * (prod 1st 5 coeffs) / (prod other 4 coeffs), 2)
+"""
+
 class DonorPredictor() :
     def __init__(self, donor_path) :
         self.file = open(os.path.abspath(os.path.expanduser(donor_path)), "rb")
@@ -62,6 +85,15 @@ AcceptorArrayLengthSums = [sum(AcceptorArrayLengths[:ii])
 
 
 class SpliceSiteScoring():
+    """
+    Given the context of a GT or AG in a string of DNA bases and precomputed coefficients (see above comment for format of coefficient files)
+    files, add a score to the transcript model that indicates how likely it is to be a splice donor or acceptor,
+    respectively, using the maximum entropy method [1]. Filters out reads that have a donor or accetor site below the valid_donor/acceptor threshold.
+
+    [1] Yeo, G., & Burge, C. B. (2004). Maximum entropy modeling of short sequence motifs with
+    applications to RNA splicing signals. Journal of Computational Biology : a Journal of
+    Computational Molecular Cell Biology, 11(2-3), 377-394. doi:10.1089/1066527041410418
+    """
     def __init__(self, hooks, splice_scoring, donor_path, acceptor_path, fasta_path, valid_donor = 4, valid_acceptor = 4, **kwargs):
         if not splice_scoring:
             return

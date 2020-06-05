@@ -12,10 +12,16 @@ from ..utils import ranges
 from .rules import ruleset
 from .hook import Hook
 
+# Any hooks added here should also be updated in the docs
 HOOKS = ["chromosome_parsed", "transcript_added", "contig_built", "transcripts_merged", "contig_merged", "merging_complete", "pre_sort", "post_sort", "complete"]
+
+# For now only support gtf
 gtf_importer = Importer(Gtf())
 
 class Merge:
+    """
+    Controls merging. This is the main class of tmerge.
+    """
     def __init__(self, inputPath, outputPath, tolerance = 0, processes=None):
         self._add_hooks()
         
@@ -33,6 +39,21 @@ class Merge:
             self.hooks[hook] = Hook()
 
     def build_contigs(self, transcripts):
+        """
+        Build sets of overlapping transcripts. 
+
+        Reduces the search space for merging.
+
+        Parameters
+        ----------
+        transcripts: list
+            List of TranscriptModel
+
+        Returns
+        -------
+        generator
+            A generator that yield lists of TranscriptModel (contigs)
+        """
         while transcripts:
             t1 = next(iter(transcripts.values()))
             cur_TSS = t1.TSS
@@ -60,10 +81,10 @@ class Merge:
 
             yield cur_contig
             
-    """
-    Attempts to merge right into left in-place.
-    """
     def merge_transcripts(self, left, right):
+        """
+        Attempts to merge right into left in-place.
+        """
         if ruleset(left, right, self.tolerance):
             left.TSS = min([left.TSS, right.TSS])
             left.TES = max([left.TES, right.TES])
@@ -77,6 +98,19 @@ class Merge:
         return False
 
     def merge_contig(self, transcripts):
+        """
+        Merge a given contig sequentially from left to right until no more merging can be done.
+
+        Parameters
+        ----------
+        transcripts: list
+            List of TranscriptModel
+
+        Returns
+        -------
+        generator
+            Generator that yields a merged contig (list of TranscriptModel)
+        """
         # This might be another method that may be quicker and cleaner but needs investigating as doesnt work quite right. Skips some transcripts
         # NOTE: transcripts should be a dequeue not a list with this method
         # if len(transcripts) == 1:
@@ -124,6 +158,9 @@ class Merge:
         return transcripts
 
     def merge(self):
+        """
+        The main function that begins tmerge.
+        """
         q = Queue()
 
         # Use multithreading and a FIFO queue for slight speed increase
@@ -148,6 +185,7 @@ class Merge:
         self.hooks["merging_complete"].exec()
 
         # Method for using multiprocessing
+        # NOTE: It doesn't work very well at the moment but has potential to create vast speed improvements
         # mg = Manager()
         # q = mg.Queue()
 

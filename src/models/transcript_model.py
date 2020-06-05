@@ -3,16 +3,23 @@ from typing import Tuple, Set
 from ..utils import ranges
 
 class TranscriptModel:
-    __slots__ = ["id", "chromosome", "strand", "_TSS", "_TES", "_junctions", "transcript_count", "contains", "meta", "_removed"]
+    """
+    Represents a transcript as it flows through tmerge.
+
+    At first this is just the transcript from the input reads but after merging it "contains" other transcripts, making it a "transcript model". 
+    When two transcripts are merged, the junctions of the merged in transcript is added to the host and the TSS/TES are updated to be the minimum/maximum of the two.
+    """
+    __slots__ = ["id", "chromosome", "strand", "_TSS", "_TES", "_junctions", "transcript_count", "meta", "_removed"]
 
     id: str
     strand: str
     chromosome: str
+    # 5' end
     _TSS: int
+    # 3' end
     _TES: int
     _junctions: Set[Tuple[int, int]] # TODO: used sortedcontainers here
-    transcript_count: int
-    contains: [str]
+    # Any key/value pairs added to meta will be added to the attributes column of the output GTF
     meta: dict
     _removed: bool
     
@@ -70,25 +77,50 @@ class TranscriptModel:
         raise Exception("Junctions cannot be set. Please use junction methods.")
 
     def add_junction(self, start, stop):
+        """
+        Add a junction to the TranscriptModel
+
+        Parameters
+        ----------
+        start: int
+            5' coordinate
+        end: init
+            3' coordinate
+        """
         if not ranges.overlaps((start, stop), (self.TSS, self.TES)):
             raise IndexError("Junction out of range of TSS and TES.")
         if (start, stop) not in self._junctions:
             self._junctions.add((start, stop))
 
     def remove_junction(self, start, stop):
+        """
+        Remove a junction from the TranscriptModel
+
+        Parameters
+        ----------
+        start: int
+            5' coordinate
+        end: init
+            3' coordinate
+        """
         if (start, stop) in self._junctions:
             self._junctions.remove((start, stop))
 
     @property
     def sorted_junctions(self):
+        # Sets can't be sorted so if a sorted list is needed, convert it to a list and sort it by the 5' end of the junction
         return sorted(self._junctions, key=lambda x: x[0])
 
     @property
     def removed(self):
         return self._removed
 
-    # Used in plugins. Plugins can only alter transcripts in place so this is used a removal flag
     def remove(self):
+        """
+        Flag the TranscriptModel for removal.
+
+        This is how plugins remove transcripts. In Merge.merge, transcripts are filtered out that have been flagged as removed.
+        """
         self._removed = True
 
 

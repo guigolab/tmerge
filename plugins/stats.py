@@ -1,4 +1,7 @@
 class Stats:
+    """
+    Add basic stats
+    """
     def __init__(self, hooks, stats, **kwargs):
         if not stats:
             return

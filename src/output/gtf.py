@@ -19,10 +19,10 @@ def write_exon(f, tm_id, transcript, start, end):
     f.write("\n")
     f.flush()
 
-"""
-Reads from a queue of contigs
-"""
 def write(q, output_path):
+    """
+    Read from a queue of transcripts and write the transcript to the output GTF.
+    """
     with open(output_path, "w") as f:
         id_count = 0
         while True:

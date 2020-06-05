@@ -1,4 +1,14 @@
 class MergedInfo():
+    """
+    Add info on what has been merged into the TranscriptModel.
+
+    Attributes added to the transcripts:
+    ------------------------------------
+    contains: the IDs of the transcripts that are merged into the TranscriptModel
+    contains_count: count of the transcripts that are contained in TranscriptModel. Starts at 1 since every TranscriptModel contains at least one transcript.
+    3p_dists_to_3p: List of nucleotide distance between the 3' end of the merged transcript and the 3' end of the container TranscriptModel
+    5p_dists_5p: List of nucleotide distance between the 5' end of the merged transcript and the 5' end of the container TranscriptModel
+    """
     def __init__(self, hooks, speed = False, **kwargs):
         self.speed = speed
 

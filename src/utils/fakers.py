@@ -4,6 +4,9 @@ import random
 from ..models.transcript_model import TranscriptModel
 
 class Faker():
+    """
+    Used in unit tests. Creates "fake" transcript models
+    """
     def __init__(self, source_type, chromosome, chromosome_length = 10000):
         self.source_type = source_type
         self.chromosome = chromosome
