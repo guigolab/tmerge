@@ -103,11 +103,10 @@ class TestRules(unittest.TestCase):
     def test_same_introns(self):
         t1 = self.faker.tm(4)
         t2 = copy.deepcopy(t1)
-        print(t1.sorted_junctions, t2.sorted_junctions)
 
         self.assertTrue(ruleset(t1, t2))
 
-        t2.add_junction(t1.sorted_junctions[2][1] + 50, t1.sorted_junctions[2][1] + 100)
+        t2.add_junction(t1.sorted_junctions[2][1] + 1, t1.sorted_junctions[2][1] + 1)
         self.assertFalse(ruleset(t1, t2))
         self.assertFalse(ruleset(t2, t1))
 
