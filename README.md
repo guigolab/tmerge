@@ -41,7 +41,7 @@ with open(output_path, "a") as f:
 ## Plugins
 Plugins allow you to "hook" into tmerge's lifecycle events and allow you to view, edit or remove the transcripts passing through tmerge and adapt it to your lab's specific needs. For example, adding Hi-Seq support.
 
-This section explains how to write plugins and register them to tmerge. It assumes you have a basic knowledge of [setup tools](https://setuptools.readthedocs.io/) and Python package distribution.
+This section explains how to write plugins and register them to tmerge. 
 
 ### Transcript Models and Contigs
 Before writing a plugin, it is important to understand the concept of Transcript Models and Contigs. Transcripts are represented in tmerge as `TranscriptModel` objects, at first these are the transcripts defined in the input file but are altered throughout the lifecycle of tmerge, either having other transcript models merged into them or removed entirely. Contigs are lists of overlapping transcript models. Merging of transcript models is only performed within a contig and not between contigs.
@@ -86,7 +86,25 @@ class MyPointlessPlugin:
 ```
 
 ### Registering plugins
-Plugins are registered using [dynamic plugin discovery](https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins).
+#### Simple list
+The easiest way to provide tmerge with plugins is to pass the `plugins` kwarg to `tmerge.merge`.
+
+```python
+from myplugins import MySimplePlugin, MyAdvancedPlugin
+from tmerge import merge
+
+merge(
+    input_path="input.gff",
+    output_path="output.gff",
+    plugins=[
+        MySimplePlugin,
+        MyAdvancedPlugin
+    ]
+)
+```
+
+#### Dynamic Plugin Discovery
+If you're already using setup_tools in your project, then you can use [dynamic plugin discovery](https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins) to easily drop in plugins to tmerge.
 
 In your project's `setup.py` add your plugin to the `tmerge.plugins` group:
 

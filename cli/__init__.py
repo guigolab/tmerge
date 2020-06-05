@@ -1,6 +1,6 @@
 import getopt, argparse
 from plugins import Stats, ReadSupport, SplicedLengths, MergedInfo, SpliceSiteScoring
-from src import _Merge
+from src import merge
 
 """
 tmerge CLI
@@ -29,8 +29,6 @@ def main():
 
     args = parser.parse_args()
 
-    merger = _Merge(args.input, args.output, args.tolerance, args.processes)
-
     """
     Load plugins
     ============
@@ -46,14 +44,16 @@ def main():
         Stats
     ]
 
-    for p in plugins:
-        p(merger.hooks, **vars(args))
-
     """
     Begin merging
     =============
     """
-    merger.merge()
+    merge(
+        input_path=args.input,
+        output_path=args.output,
+        plugins=plugins,
+        **vars(args)
+    )
 
 if __name__ == "main":
     main()
