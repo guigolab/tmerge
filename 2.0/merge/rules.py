@@ -1,5 +1,5 @@
 from itertools import product
-from functools import reduce, partial, lru_cache
+from functools import reduce, partial
 from utils import ranges
 
 def transcript_overlap(t1, t2):

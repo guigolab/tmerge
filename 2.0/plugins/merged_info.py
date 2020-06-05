@@ -1,5 +1,3 @@
-
-
 class MergedInfo():
     def __init__(self, merger, speed = False):
         self.speed = speed

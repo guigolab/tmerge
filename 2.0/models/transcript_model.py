@@ -1,9 +1,5 @@
-from dataclasses import dataclass
-from typing import List, MutableSet, Tuple, Set
-from dataclass_type_validator import TypeValidationError
+from typing import Tuple, Set
 from utils import ranges
-from functools import partial
-
 
 class TranscriptModel:
     __slots__ = ["id", "chromosome", "strand", "_TSS", "_TES", "_junctions", "transcript_count", "contains", "meta", "_removed"]

@@ -2,19 +2,15 @@ from parsers import Importer
 from parsers import gtf
 from models.transcript_model import TranscriptModel
 from output.gtf import write
-from functools import reduce, partial
-from itertools import combinations, permutations, filterfalse, chain, groupby
-from models.contig import Contig
+from functools import partial
+from itertools import combinations
 from merge.hook import Hook
 import os
-from utils import ranges, iterators
-from collections import OrderedDict
+from utils import ranges
 from merge.rules import ruleset
 from multiprocessing import Pool, Manager, Process, cpu_count
 from threading import Thread
 from queue import Queue
-from collections import deque
-
 
 HOOKS = ["chromosome_parsed", "transcript_added", "contig_built", "transcripts_merged", "contig_merged", "merging_complete", "pre_sort", "post_sort", "complete"]
 gtf_importer = Importer.Importer(gtf.Gtf())
@@ -82,6 +78,7 @@ class Merge:
 
     def merge_contig(self, transcripts):
         # This might be another method that may be quicker and cleaner but needs investigating as doesnt work quite right. Skips some transcripts
+        # NOTE: transcripts should be a dequeue not a list with this method
         # if len(transcripts) == 1:
         #     # No need to merge if <= one in contig
         #     yield transcripts[0]
