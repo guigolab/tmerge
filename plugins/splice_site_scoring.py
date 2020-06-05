@@ -62,10 +62,13 @@ AcceptorArrayLengthSums = [sum(AcceptorArrayLengths[:ii])
 
 
 class SpliceSiteScoring():
-    def __init__(self, merger, donor_path, acceptor_path, fa_path, valid_donor = 4, valid_acceptor = 4):
+    def __init__(self, merger, splice_scoring, donor_path, acceptor_path, fasta_path, valid_donor = 4, valid_acceptor = 4, **kwargs):
+        if not splice_scoring:
+            return
+        
         self.donorPredictor = DonorPredictor(donor_path)
         self.acceptorPredictor = AcceptorPredictor(acceptor_path)
-        self.chromosomes = Fasta(fa_path)
+        self.chromosomes = Fasta(fasta_path)
 
         self.valid_donor = valid_donor
         self.valid_acceptor = valid_acceptor

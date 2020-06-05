@@ -1,5 +1,8 @@
 class Stats:
-    def __init__(self, merger):
+    def __init__(self, merger, stats, **kwargs):
+        if not stats:
+            return
+
         self.transcript_count = 0
         self.contig_count = 0
         self.merged_count = 0

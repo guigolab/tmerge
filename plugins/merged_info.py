@@ -1,5 +1,5 @@
 class MergedInfo():
-    def __init__(self, merger, speed = False):
+    def __init__(self, merger, speed = False, **kwargs):
         self.speed = speed
 
         merger.hooks["transcript_added"].tap(self.add_attributes)

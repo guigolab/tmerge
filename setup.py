@@ -20,7 +20,7 @@ setup(
     python_requires='>=3',
     entry_points={
         "console_scripts": [
-            "tmerge = bin:main"
+            "tmerge = cli:main"
         ]
     }
 )

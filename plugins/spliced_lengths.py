@@ -1,9 +1,7 @@
 from functools import reduce
 
 class SplicedLengths():
-    def __init__(self, merger, speed = False):
-        self.speed = speed
-
+    def __init__(self, merger, **kwargs):
         merger.hooks["contig_merged"].tap(self.add_spliced_lengths)
 
     def add_spliced_lengths(self, transcripts):

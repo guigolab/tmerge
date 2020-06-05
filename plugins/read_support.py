@@ -1,7 +1,7 @@
 from functools import reduce
 
 class ReadSupport():
-    def __init__(self, merger, end_fuzz = 0, min_read_support = 1, speed = False):
+    def __init__(self, merger, end_fuzz = 0, min_read_support = 1, speed = False, **kwargs):
         self.end_fuzz = end_fuzz
         self.min_read_support = min_read_support
         self.speed = speed
