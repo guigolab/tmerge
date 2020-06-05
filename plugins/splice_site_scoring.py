@@ -62,7 +62,7 @@ AcceptorArrayLengthSums = [sum(AcceptorArrayLengths[:ii])
 
 
 class SpliceSiteScoring():
-    def __init__(self, merger, splice_scoring, donor_path, acceptor_path, fasta_path, valid_donor = 4, valid_acceptor = 4, **kwargs):
+    def __init__(self, hooks, splice_scoring, donor_path, acceptor_path, fasta_path, valid_donor = 4, valid_acceptor = 4, **kwargs):
         if not splice_scoring:
             return
         
@@ -73,7 +73,7 @@ class SpliceSiteScoring():
         self.valid_donor = valid_donor
         self.valid_acceptor = valid_acceptor
 
-        merger.hooks["contig_merged"].tap(self.add_splice_site_score)
+        hooks["contig_merged"].tap(self.add_splice_site_score)
 
     def add_splice_site_score(self, transcripts):
         for transcript in transcripts:

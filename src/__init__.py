@@ -7,10 +7,15 @@ discovered_plugins = {
     in iter_entry_points('tmerge.plugins')
 }
 
-def merge(input_path, output_path, tolerance = None, processes = None, **kwargs):
+def merge(**kwargs):
+    input_path = kwargs.get("input_path")
+    output_path = kwargs.get("output_path")
+    tolerance = kwargs.get("tolerance", 0)
+    processes = kwargs.get("processes", None)
+    
     merger = _Merge(input_path, output_path, tolerance, processes)
 
     for plugin in discovered_plugins.values():
-        plugin(merger, input_path, output_path, tolerance, processes, **kwargs)
+        plugin(merger.hooks, **kwargs)
 
     merger.merge()

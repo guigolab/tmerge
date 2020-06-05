@@ -1,8 +1,8 @@
 from functools import reduce
 
 class SplicedLengths():
-    def __init__(self, merger, **kwargs):
-        merger.hooks["contig_merged"].tap(self.add_spliced_lengths)
+    def __init__(self, hooks, **kwargs):
+        hooks["contig_merged"].tap(self.add_spliced_lengths)
 
     def add_spliced_lengths(self, transcripts):
         for transcript in transcripts:

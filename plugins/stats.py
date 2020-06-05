@@ -1,5 +1,5 @@
 class Stats:
-    def __init__(self, merger, stats, **kwargs):
+    def __init__(self, hooks, stats, **kwargs):
         if not stats:
             return
 
@@ -7,10 +7,10 @@ class Stats:
         self.contig_count = 0
         self.merged_count = 0
 
-        merger.hooks["input_parsed"].tap(self.add_transcripts)
-        merger.hooks["contig_built"].tap(self.add_contig)
-        merger.hooks["contig_merged"].tap(self.add_merged_transcripts)
-        merger.hooks["complete"].tap(self.print)
+        hooks["input_parsed"].tap(self.add_transcripts)
+        hooks["contig_built"].tap(self.add_contig)
+        hooks["contig_merged"].tap(self.add_merged_transcripts)
+        hooks["complete"].tap(self.print)
 
     def add_transcripts(self, transcripts):
         self.transcript_count += len(transcripts)
