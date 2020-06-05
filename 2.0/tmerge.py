@@ -26,20 +26,33 @@ parser.add_argument("--spliceScoring", action="store_true")
 parser.add_argument("--acceptor")
 parser.add_argument("--donor")
 parser.add_argument("--fasta")
+parser.add_argument("--validAcceptor", type=int, default=4)
+parser.add_argument("--validDonor", type=int, default=4)
 
 
 args = parser.parse_args()
 
 merger = Merge(args.input, args.output, args.tolerance, args.processes, args.speed)
 
+"""
+Load plugins
+============
+Order matters here for speed. 
+Functions that tap into hooks are ran in the order they are tapped. I.e. the first one to tap, will be the first to execute.
+If plugins are removing transcripts than they should run early to reduce the search space.
+"""
+if args.spliceScoring:
+    SpliceSiteScoring(merger, args.donor, args.acceptor, args.fasta, args.validDonor, args.validAcceptor)
+
 ReadSupport(merger, args.fuzz, args.support, args.speed)
 SplicedLengths(merger, args.speed)
 MergedInfo(merger, args.speed)
 
-if args.spliceScoring:
-    SpliceSiteScoring(merger, args.donor, args.acceptor, args.fasta)
-
 if args.stats:
     Stats(merger)
 
+"""
+Begin merging
+=============
+"""
 merger.merge()

@@ -144,7 +144,7 @@ class Merge:
                 self.hooks["contig_merged"].exec(merged)
 
                 unremoved_and_merged = [x for x in merged if not x.removed]
-                for transcript in self.merge_contig(unremoved_and_merged):
+                for transcript in unremoved_and_merged:
                     q.put(transcript)
         
         q.join()
