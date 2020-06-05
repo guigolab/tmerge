@@ -1,4 +1,4 @@
-from .merge import Merge
+from .merge import Merge as _Merge
 from pkg_resources import iter_entry_points
 
 discovered_plugins = {
@@ -7,8 +7,8 @@ discovered_plugins = {
     in iter_entry_points('tmerge.plugins')
 }
 
-def tmerge(input_path, output_path, tolerance, processes, **kwargs):
-    merger = Merge(input_path, output_path, tolerance, processes)
+def merge(input_path, output_path, tolerance = None, processes = None, **kwargs):
+    merger = _Merge(input_path, output_path, tolerance, processes)
 
     for plugin in discovered_plugins.values():
         plugin(merger, input_path, output_path, tolerance, processes, **kwargs)
