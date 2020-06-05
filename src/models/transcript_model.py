@@ -34,7 +34,6 @@ class TranscriptModel:
         self._TES = TES
         self._junctions = set()
         self.transcript_count = 1
-        self.contains = [self.id]
         self.meta = {}
         self._removed = False
 
