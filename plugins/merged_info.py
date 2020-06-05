@@ -1,11 +1,11 @@
 class MergedInfo():
-    def __init__(self, merger, speed = False, **kwargs):
+    def __init__(self, hooks, speed = False, **kwargs):
         self.speed = speed
 
-        merger.hooks["transcript_added"].tap(self.add_attributes)
-        merger.hooks["transcripts_merged"].tap(self.add_dists_to_ends)
-        merger.hooks["transcripts_merged"].tap(self.update_contains)
-        merger.hooks["contig_merged"].tap(self.stringify)
+        hooks["transcript_added"].tap(self.add_attributes)
+        hooks["transcripts_merged"].tap(self.add_dists_to_ends)
+        hooks["transcripts_merged"].tap(self.update_contains)
+        hooks["contig_merged"].tap(self.stringify)
 
     def stringify(self, transcripts):
         for transcript in transcripts:

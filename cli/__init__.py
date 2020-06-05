@@ -47,7 +47,7 @@ def main():
     ]
 
     for p in plugins:
-        p(merger, **vars(args))
+        p(merger.hooks, **vars(args))
 
     """
     Begin merging

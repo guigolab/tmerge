@@ -1,13 +1,13 @@
 from functools import reduce
 
 class ReadSupport():
-    def __init__(self, merger, end_fuzz = 0, min_read_support = 1, speed = False, **kwargs):
+    def __init__(self, hooks, end_fuzz = 0, min_read_support = 1, speed = False, **kwargs):
         self.end_fuzz = end_fuzz
         self.min_read_support = min_read_support
         self.speed = speed
 
-        merger.hooks["transcript_added"].tap(self.transcript_added)
-        merger.hooks["contig_built"].tap(self.calc_support)
+        hooks["transcript_added"].tap(self.transcript_added)
+        hooks["contig_built"].tap(self.calc_support)
 
     def add_full_length_count(self, transcript):
         if "full_length_count" not in transcript.meta:
