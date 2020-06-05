@@ -55,10 +55,10 @@ class Counter:
         self.count = 0
         hooks["transcript_added"].tap(self.add_one)
 
-    def add_one(self, *args, **kwargs):
+    def add_one(self, *args):
         self.count += 1
 
-    def print(self, *args, **kwargs);
+    def print(self, *args);
         print(f"There are {self.count} transcripts")
 ```
 
@@ -74,11 +74,11 @@ class MyPointlessPlugin:
         hooks["transcript_added"].tap(self.add_meta)
         hooks["contig_merged"].tap(self.remove_if_matches)
 
-    def add_meta(self, transcript, *args, **kwargs):
+    def add_meta(self, transcript, *args):
         # When tmerge.merge(input_path=output, output_path=output, extra_attribute="Pointless") is ran 'extra: "Pointless"' will be added to the attributes column for every transcript
         self.transcript.meta["extra"] = self.extra_attribute
 
-    def remove_if_matches(self, contig, *args, **kwargs):
+    def remove_if_matches(self, contig, *args):
         # Running tmerge.merge(input_path=output, output_path=output, bad_id="bad") will remove any transcript with the id of "bad" from the result
         for transcript in contig:
             if transcript.id = self.bad_id:
@@ -117,8 +117,6 @@ This will automatically register your plugin with tmerge and the plugin will be 
 
 ### Examples
 See the `plugins/` folder for examples of various plugins.
-
-There is a table below explaining the various lifecycle events and their relevent hooks. This
 
 
 ## Authors
