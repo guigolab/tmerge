@@ -1,4 +1,3 @@
-from models.contig import Contig
 from models.transcript_model import TranscriptModel
 import uuid
 import random
@@ -21,10 +20,10 @@ class Faker():
 
     def contig(self, num_transcripts=10, transcript_length = 100, introns_per_transcript=0):
         tm = self.tm(introns_per_transcript, length=transcript_length)
-        contig = Contig({ tm.id: tm })
+        contig = [tm]
         tm_start = 0
         for i in range(0, num_transcripts - 1):
-            contig.add_transcript(self.tm(introns_per_transcript, start=tm_start))
+            contig.append(self.tm(introns_per_transcript, start=tm_start))
             tm_start = tm_start + transcript_length
 
         return contig
