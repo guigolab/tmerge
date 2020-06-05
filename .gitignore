@@ -1,0 +1,5 @@
+.installed.cfg
+*.egg-info
+.vscode
+*.pyc
+__pycache__
