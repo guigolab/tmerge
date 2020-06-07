@@ -1,6 +1,8 @@
 from .abstract_parser import AbstractParser
 
 class Gtf(AbstractParser):
+    def set_data(self, line):
+        self.data = line.split("\t")
     def get_source(self):
         return "gtf"
 

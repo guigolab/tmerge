@@ -17,8 +17,8 @@ class Importer():
                         # Skip commented lines
                         continue
 
-                    data = line.split("\t")
-                    self.parser.set_data(data)
+                    self.parser.set_data(line)
+                    
                     id = self.parser.get_transcript_id()
                     start = self.parser.get_start()
                     stop = self.parser.get_end()

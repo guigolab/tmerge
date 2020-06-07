@@ -1,6 +1,8 @@
 class AbstractParser():
-    def set_data(self, data):
-        self.data = data
+    def set_data(self, line):
+        # Should seperate the line here so that it's accesible via other methods.
+        # I.e. seperate by comma or tab for TSVs and CSVs
+        raise NotImplementedError()
 
     def get_source(self):
         raise NotImplementedError()
