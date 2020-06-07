@@ -7,6 +7,10 @@ class AbstractParser():
     def get_source(self):
         raise NotImplementedError()
 
+    def get_type(self):
+        # I.e. column 3 of GFF
+        raise NotImplementedError()
+
     def get_chromosome(self):
         raise NotImplementedError()
 

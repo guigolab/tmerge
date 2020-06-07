@@ -3,11 +3,15 @@ from .abstract_parser import AbstractParser
 class Gtf(AbstractParser):
     def set_data(self, line):
         self.data = line.split("\t")
+
     def get_source(self):
         return "gtf"
 
     def get_chromosome(self):
-            return self.data[0]
+        return self.data[0]
+
+    def get_type(self):
+        return self.data[2]
 
     def get_start(self):
         return int(self.data[3])

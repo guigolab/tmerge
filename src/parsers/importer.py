@@ -19,6 +19,9 @@ class Importer():
 
                     self.parser.set_data(line)
                     
+                    if self.parser.get_type() != "exon":
+                        continue
+
                     id = self.parser.get_transcript_id()
                     start = self.parser.get_start()
                     stop = self.parser.get_end()
