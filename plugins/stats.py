@@ -13,7 +13,7 @@ class Stats:
 
         hooks["chromosome_parsed"].tap(self.add_chromosome)
         hooks["contig_built"].tap(self.add_contig)
-        hooks["contig_merged"].tap(self.add_merged_transcripts)
+        hooks["contig_complete"].tap(self.add_merged_transcripts)
         hooks["complete"].tap(self.print)
 
     def add_chromosome(self, transcripts):
@@ -27,6 +27,6 @@ class Stats:
         self.merged_count += len(transcripts)
 
     def print(self):
-        print(f"Found {self.transcript_count} in {self.chromosome_count} chromosomes.")
+        print(f"Found {self.transcript_count} transcripts in {self.chromosome_count} chromosomes.")
         print(f"Built {self.contig_count} contigs.")
         print(f"Final number of transcript models: {self.merged_count}")
