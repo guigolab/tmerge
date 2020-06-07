@@ -105,16 +105,19 @@ class SpliceSiteScoring():
         self.valid_donor = valid_donor
         self.valid_acceptor = valid_acceptor
 
+        self.skipped_chroms = set()
+
         hooks["contig_merged"].tap(self.add_splice_site_score)
+        hooks["complete"].tap(self.print_skipped_chromosomes)
 
     def add_splice_site_score(self, transcripts):
+        # Transcripts in "transcripts" are from same contig, so same chromosome, so can stop here if the chromosome is not in the genome
+        if transcripts[0].chromosome not in self.chromosomes:
+                self.skipped_chroms.add(transcripts[0].chromosome)
+                return
+
         for transcript in transcripts:
             chrom = transcript.chromosome
-
-            if chrom not in self.chromosomes:
-                print(f"Splice Site Scoring: Chromosome {chrom} not in given genome.")
-                continue
-
             strand = transcript.strand
 
             cum_donor_score = 0
@@ -190,3 +193,8 @@ class SpliceSiteScoring():
             transcript.meta["min_donor_score"] = min_donor_score
             transcript.meta["cum_acceptor_score"] = cum_acceptor_score
             transcript.meta["cum_donor_score"] = cum_donor_score
+    
+    def print_skipped_chromosomes(self):
+        if len(self.skipped_chroms) > 0:
+            print("Splice site scoring: some input chromosomes were not in the given genomes. Skipped splice site scoring on the following chromsomes: ")
+            print(", ".join(self.skipped_chroms))
