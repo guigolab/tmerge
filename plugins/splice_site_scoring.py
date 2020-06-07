@@ -110,6 +110,11 @@ class SpliceSiteScoring():
     def add_splice_site_score(self, transcripts):
         for transcript in transcripts:
             chrom = transcript.chromosome
+
+            if chrom not in self.chromosomes:
+                print(f"Splice Site Scoring: Chromosome {chrom} not in given genome.")
+                continue
+
             strand = transcript.strand
 
             cum_donor_score = 0
