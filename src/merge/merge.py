@@ -13,7 +13,7 @@ from .rules import ruleset
 from .hook import Hook
 
 # Any hooks added here should also be updated in the docs
-HOOKS = ["chromosome_parsed", "transcript_added", "contig_built", "transcripts_merged", "contig_merged", "merging_complete", "pre_sort", "post_sort", "complete"]
+HOOKS = ["chromosome_parsed", "transcript_added", "contig_built", "transcripts_merged", "contig_merged", "contig_complete", "merging_complete", "pre_sort", "post_sort", "complete"]
 
 # For now only support gtf
 gtf_importer = Importer(Gtf())
@@ -180,6 +180,8 @@ class Merge:
                 unremoved_and_merged = [x for x in merged if not x.removed]
                 for transcript in unremoved_and_merged:
                     q.put(transcript)
+
+                self.hooks["contig_complete"].exec(unremoved_and_merged)
         
         q.join()
         self.hooks["merging_complete"].exec()
