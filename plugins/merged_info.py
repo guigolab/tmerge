@@ -9,9 +9,7 @@ class MergedInfo():
     3p_dists_to_3p: List of nucleotide distance between the 3' end of the merged transcript and the 3' end of the container TranscriptModel
     5p_dists_5p: List of nucleotide distance between the 5' end of the merged transcript and the 5' end of the container TranscriptModel
     """
-    def __init__(self, hooks, speed = False, **kwargs):
-        self.speed = speed
-
+    def __init__(self, hooks, **kwargs):
         hooks["transcript_added"].tap(self.add_attributes)
         hooks["transcripts_merged"].tap(self.add_dists_to_ends)
         hooks["transcripts_merged"].tap(self.update_contains)
