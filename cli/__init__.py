@@ -1,5 +1,5 @@
 import getopt, argparse
-from plugins import Stats, ReadSupport, SplicedLengths, MergedInfo, SpliceSiteScoring
+from plugins import Stats, ReadSupport, SplicedLengths, MergedInfo, SpliceSiteScoring, MinLength
 from src import merge
 
 """
@@ -17,6 +17,7 @@ def main():
     parser.add_argument("--tolerance", help="Maximum number of nucleotides of terminal exon overhang allowed within an intron of another transcript during the merging of input reads", type=int, default=0)
     parser.add_argument("--min_read_support", help="Minimum number of times a read alignment (by exon/intron structure) needs to be present in the input. Any read alignments below this threshold will be removed", type=int, default=1)
     parser.add_argument("--end_fuzz", help="Tolerated fuzziness of 5' and 3' ends for two reads to be considered equivalent when calculating read support", type=int, default=0)
+    parser.add_argument("--min_length", help="The minimum length required for output transcripts.", default=200)
     parser.add_argument("--speed", help="Speed mode. Enables options that forgoe sensitivity and precision for faster merge time.", action="store_true")
     parser.add_argument("--processes", help="The number of processes (threads) allowed to run. Must be greater than 2. If left unspecified, then will use the maximum number available.", type=int, default=None)
     parser.add_argument("--splice_scoring", action="store_true", help="Enable splice site scoring.", default=False)
@@ -41,6 +42,7 @@ def main():
         ReadSupport,
         SplicedLengths,
         MergedInfo,
+        MinLength,
         Stats
     ]
 
