@@ -105,6 +105,9 @@ class SpliceSiteScoring():
         self.valid_donor = valid_donor
         self.valid_acceptor = valid_acceptor
 
+        self.min_donor_score = -19
+        self.min_acceptor_score = -24
+
         self.skipped_chroms = set()
 
         hooks["contig_merged"].tap(self.add_splice_site_score)
@@ -117,15 +120,18 @@ class SpliceSiteScoring():
                 return
 
         for transcript in transcripts:
+            if transcript.monoexonic:
+                continue
+
             chrom = transcript.chromosome
             strand = transcript.strand
 
             cum_donor_score = 0
             cum_acceptor_score = 0
-            max_donor_score = None
-            max_acceptor_score = None
-            min_donor_score = None
-            min_acceptor_score = None
+            max_donor_score = self.min_donor_score
+            max_acceptor_score = self.min_acceptor_score
+            min_donor_score = self.min_donor_score
+            min_acceptor_score = self.min_acceptor_score
 
             for junction in transcript.junctions:
                 intron_start = junction[0] + 1
@@ -160,32 +166,32 @@ class SpliceSiteScoring():
                     acceptorFlank2=acceptor[20:]
                     scoreDonor=self.donorPredictor(donorFlank1, donorFlank2)
                     scoreAcceptor=self.acceptorPredictor(acceptorFlank1, acceptorFlank2)
-
-                    if scoreDonor < self.valid_donor:
-                        transcript.remove()
-                        break
-                        max_donor_score = scoreDonor
-                    if scoreAcceptor < self.valid_acceptor:
-                        transcript.remove()
-                        break
-                    
-                    if not max_donor_score or scoreDonor > max_donor_score:
-                        max_donor_score = scoreDonor
-                    if not min_donor_score or scoreDonor < min_donor_score:
-                        min_donor_score = scoreDonor
-                    
-                    if not max_acceptor_score or scoreAcceptor > max_acceptor_score:
-                        max_acceptor_score = scoreAcceptor
-                    if not min_acceptor_score or scoreAcceptor < min_acceptor_score:
-                        min_acceptor_score = scoreAcceptor
-
-                    cum_donor_score += scoreDonor
-                    cum_acceptor_score += scoreAcceptor
-
                 else:
-                    # Not canonical, remove anyway
-                    transcript.remove()
-                    break
+                    scoreDonor=self.min_donor_score
+                    scoreAcceptor=self.min_acceptor_score
+
+                # # If any one of the junctions does not meet score requirements, remove it
+                # if scoreDonor < self.valid_donor or scoreAcceptor < self.valid_acceptor:
+                #     transcript.remove()
+                #     break
+                
+                if scoreDonor > max_donor_score:
+                    max_donor_score = scoreDonor
+                if scoreDonor < min_donor_score:
+                    min_donor_score = scoreDonor
+                
+                if scoreAcceptor > max_acceptor_score:
+                    max_acceptor_score = scoreAcceptor
+                if scoreAcceptor < min_acceptor_score:
+                    min_acceptor_score = scoreAcceptor
+
+                cum_donor_score += scoreDonor
+                cum_acceptor_score += scoreAcceptor
+
+            # If any one of the junctions does not meet score requirements, remove it
+            if max_donor_score < self.valid_donor and max_acceptor_score < self.valid_acceptor:
+                transcript.remove()
+                break
 
             transcript.meta["max_acceptor_score"] = max_acceptor_score
             transcript.meta["max_donor_score"] = max_donor_score
