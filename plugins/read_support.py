@@ -2,9 +2,8 @@ from functools import reduce
 
 class ReadSupport():
     """
-    Computes read support and abundance for each transcript and filters transcripts that do not meet min_abundance or min_read_support.
+    Computes read support for each transcript and filters transcripts that do not meet min_abundance.
 
-    Read support: number of reads in the input (as defined by the exon/intron structure) that match a gien transcript.
     abundance: read support as a fraction of the maximum read support in a contig.
 
     Parameters
@@ -14,16 +13,13 @@ class ReadSupport():
         Tolerated fuzziness of 5' and 3' ends for two reads to be considered equivalent when computing read support
     min_abundance: float
         Minimum abundance for a transcript. Any transcripts with abundance below this threshold will be removed.
-    min_read_support: int
-        Minimum read support for a transcript
     """
-    def __init__(self, hooks, end_fuzz = 0, min_abundance = 0.15, min_read_support = 1, **kwargs):
+    def __init__(self, hooks, end_fuzz = 0, min_abundance = 0.15, **kwargs):
         if min_abundance > 1:
             raise TypeError("min_abundance must be < 1.")
 
         self.end_fuzz = end_fuzz
         self.min_abundance = min_abundance
-        self.min_read_support = min_read_support
 
         hooks["transcript_added"].tap(self.add_meta)
         hooks["contig_built"].tap(self.calc_support)
@@ -64,9 +60,6 @@ class ReadSupport():
 
             if target.meta["read_support"] > max_read_support:
                 max_read_support = target.meta["read_support"]
-
-            if target.meta["read_support"] < self.min_read_support:
-                target.remove()
 
         for t in transcripts:
             t.meta["abundance"] = t.meta["read_support"] / max_read_support
