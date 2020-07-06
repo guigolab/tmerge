@@ -40,6 +40,9 @@ def main():
 
     args = parser.parse_args()
 
+    if args.splice_scoring and args.min_isoform_fraction > 0:
+        raise TypeError("You cannot use splice scoring and min_isoform_fraction at the same time")
+
     """
     Load plugins
     ============
