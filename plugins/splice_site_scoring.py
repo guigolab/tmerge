@@ -115,6 +115,9 @@ class SpliceSiteScoring():
 
     def add_splice_site_score(self, transcripts):
         # Transcripts in "transcripts" are from same contig, so same chromosome, so can stop here if the chromosome is not in the genome
+        if len(transcripts) == 0:
+            return
+        
         if transcripts[0].chromosome not in self.chromosomes:
                 self.skipped_chroms.add(transcripts[0].chromosome)
                 return
@@ -142,20 +145,13 @@ class SpliceSiteScoring():
                 left_end = left_start + 2
                 right_end = right_start + 2
 
-                if transcript.strand == "+":
-                    donor_start = left_start - 3
-                    donor_end = left_end + 4
-                    acceptor_start = right_start - 18 # WHy the second - 18??? 
-                    acceptor_end = right_end + 3
-                else:
-                    donor_start = right_start - 4
-                    donor_end = right_end + 3
-                    acceptor_start = left_start - 3
-                    acceptor_end = left_end + 18
+                if strand == '+':
+                    donor = self.chromosomes[chrom][left_start-3:left_end+4].seq.upper()
+                    acceptor = self.chromosomes[chrom][right_start-18:right_end+3].seq.upper()
+                elif strand == '-':
+                    donor = self.chromosomes[chrom][right_start-4:right_end+3].reverse.complement.seq.upper()
+                    acceptor = self.chromosomes[chrom][left_start-3:left_end+18].reverse.complement.seq.upper()
 
-                donor = self.chromosomes[chrom][donor_start:donor_end].seq.upper()
-                acceptor = self.chromosomes[chrom][acceptor_start:acceptor_end].seq.upper()
-                
                 donorDiNt= donor[3:5]
                 acceptorDiNt=acceptor[18:20]
                 
