@@ -2,31 +2,31 @@ from functools import reduce
 
 class ReadSupport():
     """
-    Computes read support for each transcript and filters transcripts that do not meet min_abundance.
+    Computes read support for each transcript and filters transcripts that do not meet min_isoform_fraction.
 
-    abundance: read support as a fraction of the maximum read support in a contig.
+    isoform_fraction: read support as a fraction of the maximum read support in a contig.
 
     Parameters
     ----------
     hooks: dict
     end_fuzz: int
         Tolerated fuzziness of 5' and 3' ends for two reads to be considered equivalent when computing read support
-    min_abundance: float
-        Minimum abundance for a transcript. Any transcripts with abundance below this threshold will be removed.
+    min_isoform_fraction: float
+        Minimum isoform_fraction for a transcript. Any transcripts with isoform_fraction below this threshold will be removed.
     """
-    def __init__(self, hooks, end_fuzz = 0, min_abundance = 0.15, **kwargs):
-        if min_abundance > 1:
-            raise TypeError("min_abundance must be < 1.")
+    def __init__(self, hooks, end_fuzz = 0, min_isoform_fraction = 0, **kwargs):
+        if min_isoform_fraction > 1:
+            raise TypeError("min_isoform_fraction must be < 1.")
 
         self.end_fuzz = end_fuzz
-        self.min_abundance = min_abundance
+        self.min_isoform_fraction = min_isoform_fraction
 
         hooks["transcript_added"].tap(self.add_meta)
         hooks["contig_built"].tap(self.calc_support)
 
     def add_meta(self, transcript):
         transcript.meta["read_support"] = 1
-        transcript.meta["abundance"] = 0
+        transcript.meta["isoform_fraction"] = 0
 
     def supports_target(self, target, other):
         if (
@@ -62,6 +62,6 @@ class ReadSupport():
                 max_read_support = target.meta["read_support"]
 
         for t in transcripts:
-            t.meta["abundance"] = t.meta["read_support"] / max_read_support
-            if t.meta["abundance"] < self.min_abundance:
+            t.meta["isoform_fraction"] = t.meta["read_support"] / max_read_support
+            if t.meta["isoform_fraction"] < self.min_isoform_fraction:
                 t.remove()
