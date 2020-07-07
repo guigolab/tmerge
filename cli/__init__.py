@@ -28,6 +28,7 @@ def main():
 
     # Options for ReadSupport
     parser.add_argument("--min_isoform_fraction", help="Minimum number of times a read alignment (by exon/intron structure) needs to be present in the input expressed as a fraction of the maximum value at a gene locus.", type=float, default=0)
+    parser.add_argument("--min_read_support", help="Minimum number of times a read alignment (by exon/intron structure) needs to be present in the input.", type=int, default=1)
     parser.add_argument("--end_fuzz", help="Tolerated fuzziness of 5' and 3' ends for two reads to be considered equivalent when calculating read support", type=int, default=0)
     
     # Options for SpliceSiteScoring
@@ -38,10 +39,11 @@ def main():
     parser.add_argument("--valid_acceptor", type=int, default=4, help="Only if splice_scoring enabled. Threshold at which transcripts are removed.")
     parser.add_argument("--valid_donor", type=int, default=4, help="Only if splice_scoring enabled. Threshold at which transcripts are removed.")
 
+
     args = parser.parse_args()
 
-    if args.splice_scoring and args.min_isoform_fraction > 0:
-        raise TypeError("You cannot use splice scoring and min_isoform_fraction at the same time")
+    if args.splice_scoring and (args.min_isoform_fraction > 0 or args.min_read_support > 1):
+        raise TypeError("You cannot use splice scoring and min_isoform_fraction/min_read_support at the same time")
 
     """
     Load plugins

@@ -2,9 +2,10 @@ from functools import reduce
 
 class ReadSupport():
     """
-    Computes read support for each transcript and filters transcripts that do not meet min_isoform_fraction.
+    Computes read support for each transcript and filters transcripts that do not meet min_isoform_fraction or min_read_support.
 
     isoform_fraction: read support as a fraction of the maximum read support in a contig.
+    Read support: number of reads in the input (as defined by the exon/intron structure) that match a gien transcript.
 
     Parameters
     ----------
@@ -12,14 +13,21 @@ class ReadSupport():
     end_fuzz: int
         Tolerated fuzziness of 5' and 3' ends for two reads to be considered equivalent when computing read support
     min_isoform_fraction: float
-        Minimum isoform_fraction for a transcript. Any transcripts with isoform_fraction below this threshold will be removed.
+        Minimum isoform fraction for a transcript. Any transcripts with isoform_fraction below this threshold will be removed.
+    min_read_support: int
+        Minimum read support for a transcript
     """
-    def __init__(self, hooks, end_fuzz = 0, min_isoform_fraction = 0, **kwargs):
+    def __init__(self, hooks, end_fuzz = 0, min_isoform_fraction = 0, min_read_support = 1, **kwargs):
         if min_isoform_fraction > 1:
             raise TypeError("min_isoform_fraction must be < 1.")
+        if min_read_support < 1:
+            raise TypeError("min_read_support must be >= 1")
+        if min_isoform_fraction > 0 and min_read_support > 1:
+            raise TypeError("You cannot use min_isoform_fraction and min_read_support at the same time.")
 
         self.end_fuzz = end_fuzz
         self.min_isoform_fraction = min_isoform_fraction
+        self.min_read_support = min_read_support
 
         hooks["transcript_added"].tap(self.add_meta)
         hooks["contig_built"].tap(self.calc_support)
@@ -60,6 +68,9 @@ class ReadSupport():
 
             if target.meta["read_support"] > max_read_support:
                 max_read_support = target.meta["read_support"]
+
+            if target.meta["read_support"] < self.min_read_support:
+                target.remove()
 
         for t in transcripts:
             t.meta["isoform_fraction"] = t.meta["read_support"] / max_read_support
