@@ -29,21 +29,10 @@ class Depth:
 
     def trim_transcript(self, transcript):
         depths = transcript.meta["depth"]
-        look_ahead = 3 # Number of bases to look ahead before trimming
         cutoff_depth = statistics.median_low(depths)
 
         for pos, depth in enumerate(depths):
             if depth >= cutoff_depth:
-                continue
-            
-            # Check the depth ahead of current depth to see if it isn't just a random point drop
-            pos_ahead = pos + look_ahead if transcript.strand == "+" else pos - look_ahead
-            if pos_ahead > 0 and pos_ahead < len(depths):
-                depth_ahead = depths[pos_ahead]
-            else:
-                depth_ahead = depth
-
-            if depth_ahead >= cutoff_depth:
                 continue
 
             if transcript.strand == "+":
