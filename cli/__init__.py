@@ -25,7 +25,8 @@ def main():
     parser.add_argument("--min_length", help="The minimum length required for output transcripts.", default=0, type=int)
 
     # Options for Depth
-    parser.add_argument("--trim", help="(experimental) Trim output transcript ends? Ends are trimmed when there is a sudden drop in depth.", default=False)
+    # Depth disabled
+    # parser.add_argument("--trim", action="store_true", help="(experimental) Trim output transcript ends? Ends are trimmed when there is a sudden drop in depth.", default=False)
 
     # Options for ReadSupport
     parser.add_argument("--min_isoform_fraction", help="Minimum number of times a read alignment (by exon/intron structure) needs to be present in the input expressed as a fraction of the maximum value at a gene locus.", type=float, default=0)
@@ -76,6 +77,8 @@ def main():
         SplicedLengths,
         MergedInfo,
         MinLength,
+        # Disabled depth as is experimental
+        # Depth,
         Stats
     ]
 
