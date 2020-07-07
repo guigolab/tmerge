@@ -21,7 +21,7 @@ def main():
     parser.add_argument("-s", "--stats", action="store_true", help="Provide statistics for merged transcripts.")
 
     # Options for MinLength
-    parser.add_argument("--min_length", help="The minimum length required for output transcripts.", default=200, type=int)
+    parser.add_argument("--min_length", help="The minimum length required for output transcripts.", default=0, type=int)
 
     # Options for Depth
     parser.add_argument("--trim", help="(experimental) Trim output transcript ends? Ends are trimmed when there is a sudden drop in depth.", default=False)
@@ -38,7 +38,6 @@ def main():
     parser.add_argument("--fasta_path", help="Only if splice_scoring enabled. Path to the FASTA genome file.")
     parser.add_argument("--valid_acceptor", type=int, default=4, help="Only if splice_scoring enabled. Threshold at which transcripts are removed.")
     parser.add_argument("--valid_donor", type=int, default=4, help="Only if splice_scoring enabled. Threshold at which transcripts are removed.")
-
 
     args = parser.parse_args()
 
