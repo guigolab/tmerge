@@ -132,8 +132,10 @@ class SpliceSiteScoring():
             min_donor_score = self.min_donor_score
             min_acceptor_score = self.min_acceptor_score
             all_canonical = True
+            donor_scores = []
+            acceptor_scores = []
 
-            for junction in transcript.junctions:
+            for junction in transcript.sorted_junctions:
                 intron_start = junction[0] + 1
                 intron_end = junction[1] - 1
                 
@@ -170,6 +172,9 @@ class SpliceSiteScoring():
                 if scoreDonor < self.valid_donor or scoreAcceptor < self.valid_acceptor:
                     transcript.remove()
                     break
+
+                donor_scores.append(scoreDonor)
+                acceptor_scores.append(scoreAcceptor)
                 
                 if scoreDonor < min_donor_score:
                     min_donor_score = scoreDonor
@@ -179,6 +184,8 @@ class SpliceSiteScoring():
             transcript.meta["min_acceptor_score"] = min_acceptor_score
             transcript.meta["min_donor_score"] = min_donor_score
             transcript.meta["all_canonical"] = all_canonical
+            transcript.meta["acceptor_scores"] = acceptor_scores
+            transcript.meta["donor_scores"] = donor_scores
     
     def print_skipped_chromosomes(self):
         if len(self.skipped_chroms) > 0:
