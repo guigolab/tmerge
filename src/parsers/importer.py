@@ -70,6 +70,6 @@ class Importer():
 
                 except Exception as e:
                     # TODO: Handle this exception
-                    raise IOError(f"Error in file parsing at line {num}: {e}")
+                    raise IOError(f"Error in file parsing at line {num}: {e} \n Line: {line}")
 
         yield transcript_models
