@@ -37,8 +37,8 @@ def main():
     parser.add_argument("--acceptor_path", help="Only if splice_scoring enabled. Path to the acceptor file.")
     parser.add_argument("--donor_path", help="Only if splice_scoring enabled. Path to the donor file.")
     parser.add_argument("--fasta_path", help="Only if splice_scoring enabled. Path to the FASTA genome file.")
-    parser.add_argument("--valid_acceptor", type=int, default=4, help="Only if splice_scoring enabled. Threshold at which transcripts are removed.")
-    parser.add_argument("--valid_donor", type=int, default=4, help="Only if splice_scoring enabled. Threshold at which transcripts are removed.")
+    parser.add_argument("--valid_acceptor", type=int, default=-24, help="Only if splice_scoring enabled. Threshold at which transcripts are removed.")
+    parser.add_argument("--valid_donor", type=int, default=-19, help="Only if splice_scoring enabled. Threshold at which transcripts are removed.")
 
     # Flags for ONT/PacBio
     parser.add_argument("--ont", action="store_true", default=False, help="Use pre-defined optimum options for ONT datasets.")
