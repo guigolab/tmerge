@@ -129,8 +129,8 @@ class SpliceSiteScoring():
             chrom = transcript.chromosome
             strand = transcript.strand
 
-            min_donor_score = self.min_donor_score
-            min_acceptor_score = self.min_acceptor_score
+            min_donor_score = None
+            min_acceptor_score = None
             all_canonical = True
             donor_scores = []
             acceptor_scores = []
@@ -176,9 +176,9 @@ class SpliceSiteScoring():
                 donor_scores.append(scoreDonor)
                 acceptor_scores.append(scoreAcceptor)
                 
-                if scoreDonor < min_donor_score:
+                if not min_donor_score or scoreDonor < min_donor_score:
                     min_donor_score = scoreDonor
-                if scoreAcceptor < min_acceptor_score:
+                if not min_acceptor_score or scoreAcceptor < min_acceptor_score:
                     min_acceptor_score = scoreAcceptor
 
             transcript.meta["min_acceptor_score"] = min_acceptor_score
