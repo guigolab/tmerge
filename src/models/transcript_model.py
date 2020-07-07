@@ -24,7 +24,7 @@ class TranscriptModel:
     _removed: bool
     
     def __init__(self, id, chromosome, strand, TSS, TES):
-        if TSS >= TES:
+        if TSS > TES:
             raise IndexError("TSS must be less than TES.")
         
         self.id = id
