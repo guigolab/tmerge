@@ -5,10 +5,7 @@ class Depth:
     """
     Define depth for each transcript and trim TMs when read depth drops.
     """
-    def __init__(self, hooks, trim = True, speed = False, **kwargs):
-        if speed:
-            return
-        
+    def __init__(self, hooks, trim = False, **kwargs):
         hooks["transcript_added"].tap(self.add_attributes)
         hooks["contig_merged"].tap(self.compute_depth)
         if trim:
