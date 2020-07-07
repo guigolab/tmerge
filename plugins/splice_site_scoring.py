@@ -129,12 +129,9 @@ class SpliceSiteScoring():
             chrom = transcript.chromosome
             strand = transcript.strand
 
-            cum_donor_score = 0
-            cum_acceptor_score = 0
-            max_donor_score = self.min_donor_score
-            max_acceptor_score = self.min_acceptor_score
             min_donor_score = self.min_donor_score
             min_acceptor_score = self.min_acceptor_score
+            all_canonical = True
 
             for junction in transcript.junctions:
                 intron_start = junction[0] + 1
@@ -154,6 +151,9 @@ class SpliceSiteScoring():
 
                 donorDiNt= donor[3:5]
                 acceptorDiNt=acceptor[18:20]
+
+                if donorDiNt != 'GT' and acceptorDiNt != 'AG':
+                    all_canonical = False
                 
                 if (donorDiNt == 'GT' and acceptorDiNt == 'AG' and len(donor) == 9 and len(acceptor) == 23 and 'N' not in donor and 'N' not in acceptor):
                     donorFlank1=donor[:3]
@@ -166,35 +166,19 @@ class SpliceSiteScoring():
                     scoreDonor=self.min_donor_score
                     scoreAcceptor=self.min_acceptor_score
 
-                # # If any one of the junctions does not meet score requirements, remove it
-                # if scoreDonor < self.valid_donor or scoreAcceptor < self.valid_acceptor:
-                #     transcript.remove()
-                #     break
+                # If any one of the junctions does not meet score requirements, remove it
+                if scoreDonor < self.valid_donor or scoreAcceptor < self.valid_acceptor:
+                    transcript.remove()
+                    break
                 
-                if scoreDonor > max_donor_score:
-                    max_donor_score = scoreDonor
                 if scoreDonor < min_donor_score:
                     min_donor_score = scoreDonor
-                
-                if scoreAcceptor > max_acceptor_score:
-                    max_acceptor_score = scoreAcceptor
                 if scoreAcceptor < min_acceptor_score:
                     min_acceptor_score = scoreAcceptor
 
-                cum_donor_score += scoreDonor
-                cum_acceptor_score += scoreAcceptor
-
-            # If any one of the junctions does not meet score requirements, remove it
-            if max_donor_score < self.valid_donor and max_acceptor_score < self.valid_acceptor:
-                transcript.remove()
-                break
-
-            transcript.meta["max_acceptor_score"] = max_acceptor_score
-            transcript.meta["max_donor_score"] = max_donor_score
             transcript.meta["min_acceptor_score"] = min_acceptor_score
             transcript.meta["min_donor_score"] = min_donor_score
-            transcript.meta["cum_acceptor_score"] = cum_acceptor_score
-            transcript.meta["cum_donor_score"] = cum_donor_score
+            transcript.meta["all_canonical"] = all_canonical
     
     def print_skipped_chromosomes(self):
         if len(self.skipped_chroms) > 0:
