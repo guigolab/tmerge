@@ -16,6 +16,7 @@ def main():
     parser.add_argument("-o", "--output", help="Output GTF file")
     parser.add_argument("--processes", help="The number of processes (threads) allowed to run. Must be greater than 2. If left unspecified, then will use the maximum number available.", type=int, default=None)
     parser.add_argument("--tolerance", help="Maximum number of nucleotides of terminal exon overhang allowed within an intron of another transcript during the merging of input reads", type=int, default=0)
+    parser.add_argument("--no_merge", action="store_true", default=False, help="Disable merging. Only pre-merge filtering is done. Useful for debugging.")
 
     # Stats
     parser.add_argument("-s", "--stats", action="store_true", help="Provide statistics for merged transcripts.")

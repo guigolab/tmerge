@@ -22,13 +22,14 @@ class Merge:
     """
     Controls merging. This is the main class of tmerge.
     """
-    def __init__(self, inputPath, outputPath, tolerance = 0, processes=None):
+    def __init__(self, inputPath, outputPath, tolerance = 0, processes=None, no_merge=False):
         self._add_hooks()
         
         self.inputPath = inputPath
         self.outputPath = outputPath
         self.tolerance = tolerance
         self.processes = processes
+        self.no_merge = no_merge
 
         # Overwrite file contents first
         open(self.outputPath, 'w').close()
@@ -173,7 +174,10 @@ class Merge:
                 self.hooks["contig_built"].exec(contig)
 
                 unremoved = [x for x in contig if not x.removed]
-                merged = self.merge_contig(unremoved)
+                if self.no_merge:
+                    merged = unremoved
+                else:
+                    merged = self.merge_contig(unremoved)
 
                 self.hooks["contig_merged"].exec(merged)
 
