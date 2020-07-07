@@ -40,10 +40,28 @@ def main():
     parser.add_argument("--valid_acceptor", type=int, default=4, help="Only if splice_scoring enabled. Threshold at which transcripts are removed.")
     parser.add_argument("--valid_donor", type=int, default=4, help="Only if splice_scoring enabled. Threshold at which transcripts are removed.")
 
+    # Flags for ONT/PacBio
+    parser.add_argument("--ont", action="store_true", default=False, help="Use pre-defined optimum options for ONT datasets.")
+    parser.add_argument("--pacbio", action="store_true", default=False, help="Use pre-defined optimum options for PacBio datasets.")
+
     args = parser.parse_args()
 
     if args.splice_scoring and (args.min_isoform_fraction > 0 or args.min_read_support > 1):
         raise TypeError("You cannot use splice scoring and min_isoform_fraction/min_read_support at the same time")
+
+    if args.ont and args.pacbio:
+        raise TypeError("ONT and PacBio flags cannot be used together")
+
+    if args.ont:
+        args.min_length = 200
+        args.min_isoform_fraction = 0.09
+        args.end_fuzz = 2
+        args.tolerance = 7
+    elif args.pacbio:
+        args.min_length = 200
+        args.end_fuzz = 2
+        args.tolerance = 2
+        args.min_isoform_fraction = 0.05
 
     """
     Load plugins
