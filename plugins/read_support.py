@@ -17,7 +17,7 @@ class ReadSupport():
     min_read_support: int
         Minimum read support for a transcript
     """
-    def __init__(self, hooks, end_fuzz = 0, min_isoform_fraction = 0, min_read_support = 1, **kwargs):
+    def __init__(self, hooks, end_fuzz = 0, min_isoform_fraction = 0, min_read_support = 1, no_merge, **kwargs):
         if min_isoform_fraction > 1:
             raise TypeError("min_isoform_fraction must be < 1.")
         if min_read_support < 1:
@@ -28,6 +28,7 @@ class ReadSupport():
         self.end_fuzz = end_fuzz
         self.min_isoform_fraction = min_isoform_fraction
         self.min_read_support = min_read_support
+        self.no_merge = no_merge
 
         hooks["transcript_added"].tap(self.add_meta)
         hooks["contig_built"].tap(self.calc_support)
@@ -64,7 +65,11 @@ class ReadSupport():
                 
                 if self.supports_target(target, other):
                     target.meta["read_support"] += 1
-                    other.remove() # Remove if supports target as is the same TM
+                    if not args.no_merge:
+                        # Remove if supports target as is the same TM and would be merged anyway
+                        # Improves speed as reduces search space
+                        # Don't run in no_merge mode as we want to keep all transcripts that would be merged.
+                        other.remove()
 
             if target.meta["read_support"] > max_read_support:
                 max_read_support = target.meta["read_support"]
