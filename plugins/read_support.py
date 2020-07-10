@@ -17,7 +17,7 @@ class ReadSupport():
     min_read_support: int
         Minimum read support for a transcript
     """
-    def __init__(self, hooks, end_fuzz = 0, min_isoform_fraction = 0, min_read_support = 1, no_merge, **kwargs):
+    def __init__(self, hooks, end_fuzz = 0, min_isoform_fraction = 0, min_read_support = 1, no_merge = False, **kwargs):
         if min_isoform_fraction > 1:
             raise TypeError("min_isoform_fraction must be < 1.")
         if min_read_support < 1:
