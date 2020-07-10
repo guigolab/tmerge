@@ -94,7 +94,7 @@ class SpliceSiteScoring():
     applications to RNA splicing signals. Journal of Computational Biology : a Journal of
     Computational Molecular Cell Biology, 11(2-3), 377-394. doi:10.1089/1066527041410418
     """
-    def __init__(self, hooks, splice_scoring, donor_path, acceptor_path, fasta_path, valid_donor = 4, valid_acceptor = 4, **kwargs):
+    def __init__(self, hooks, splice_scoring, donor_path, acceptor_path, fasta_path, valid_donor, valid_acceptor, **kwargs):
         if not splice_scoring:
             return
         
@@ -107,6 +107,11 @@ class SpliceSiteScoring():
 
         self.min_donor_score = -19
         self.min_acceptor_score = -24
+
+        if not self.valid_donor:
+            self.valid_donor = self.min_donor_score
+        if not self.valid_acceptor:
+            self.valid_acceptor = self.min_acceptor_score
 
         self.skipped_chroms = set()
 
@@ -135,6 +140,8 @@ class SpliceSiteScoring():
             donor_scores = []
             acceptor_scores = []
 
+            transcript.meta["DEBUG"] = []
+
             for junction in transcript.sorted_junctions:
                 intron_start = junction[0] + 1
                 intron_end = junction[1] - 1
@@ -154,10 +161,14 @@ class SpliceSiteScoring():
                 donorDiNt= donor[3:5]
                 acceptorDiNt=acceptor[18:20]
 
-                if donorDiNt != 'GT' and acceptorDiNt != 'AG':
-                    all_canonical = False
+                junction_canonical = donorDiNt == 'GT' and acceptorDiNt == 'AG'
+                correct_lengths = len(donor) == 9 and len(acceptor) == 23
+                no_unmatched_bases = 'N' not in donor and 'N' not in acceptor
                 
-                if (donorDiNt == 'GT' and acceptorDiNt == 'AG' and len(donor) == 9 and len(acceptor) == 23 and 'N' not in donor and 'N' not in acceptor):
+                if not junction_canonical:
+                    all_canonical = False
+
+                if junction_canonical and correct_lengths and no_unmatched_bases:
                     donorFlank1=donor[:3]
                     donorFlank2=donor[5:]
                     acceptorFlank1=acceptor[:18]
@@ -168,10 +179,10 @@ class SpliceSiteScoring():
                     scoreDonor=self.min_donor_score
                     scoreAcceptor=self.min_acceptor_score
 
-                # If any one of the junctions does not meet score requirements, remove it
-                if scoreDonor < self.valid_donor or scoreAcceptor < self.valid_acceptor:
-                    transcript.remove()
-                    break
+                if not correct_lengths:
+                    transcript.meta["DEBUG"].append("not correct lengths")
+                if not no_unmatched_bases:
+                    transcript.meta["DEBUG"].append("unmatched_bases")
 
                 donor_scores.append(scoreDonor)
                 acceptor_scores.append(scoreAcceptor)
@@ -180,6 +191,11 @@ class SpliceSiteScoring():
                     min_donor_score = scoreDonor
                 if not min_acceptor_score or scoreAcceptor < min_acceptor_score:
                     min_acceptor_score = scoreAcceptor
+
+                # If any one of the junctions does not meet score requirements, remove it
+                if scoreDonor < self.valid_donor or scoreAcceptor < self.valid_acceptor:
+                    transcript.remove()
+                    break
 
             transcript.meta["min_acceptor_score"] = min_acceptor_score
             transcript.meta["min_donor_score"] = min_donor_score
