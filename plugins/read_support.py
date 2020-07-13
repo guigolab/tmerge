@@ -65,7 +65,7 @@ class ReadSupport():
                 
                 if self.supports_target(target, other):
                     target.meta["read_support"] += 1
-                    if not args.no_merge:
+                    if not self.no_merge:
                         # Remove if supports target as is the same TM and would be merged anyway
                         # Improves speed as reduces search space
                         # Don't run in no_merge mode as we want to keep all transcripts that would be merged.
