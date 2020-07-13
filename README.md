@@ -5,6 +5,8 @@ tmerge compares transcript structures (or read-to-genome alignments) present in 
 
 tmerge is fast and can typically process several millions of aligned long reads in a few minutes.
 
+![tmerge](/images/tmerge2_basic.png)
+
 ## Installation
 ```
 pip install tmerge
@@ -121,6 +123,9 @@ setup(
 This will automatically register your plugin with tmerge and the plugin will be executed with `tmerge.merge`.
 
 ### Lifecycle events
+![tmerge2 hookes](/images/tmerge2_hooks.png)
+
+
 | Hook Name          | When?                                                                                        | Arguments sent to hooked-in functions                                                                                                                               |
 |--------------------|----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | chromosome_parsed  | When one chromosome is parsed from the input                                                 | `chromosome` (list of `TranscriptModel`s)                                                                                                                           |
@@ -133,7 +138,6 @@ This will automatically register your plugin with tmerge and the plugin will be 
 | pre_sort           | Just before the merged output is sorted                                                      | None                                                                                                                                                                |
 | post_sort          | Just after the merged output is sorted                                                       | None                                                                                                                                                                |
 | complete           | Everything complete                                                                          | None                                                                                                                                                                |
-
 ### Examples
 See the `plugins/` folder for examples of various plugins.
 
