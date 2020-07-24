@@ -29,6 +29,8 @@ def main():
     # parser.add_argument("--trim", action="store_true", help="(experimental) Trim output transcript ends? Ends are trimmed when there is a sudden drop in depth.", default=False)
 
     # Options for ReadSupport
+    # TODO: Change --min_isoform_fraction/--min_read_support to one option
+    # If it is < 1 it is min_isoform_fraction if it is > 1 it's min_read_support
     parser.add_argument("--min_isoform_fraction", help="Minimum number of times a read alignment (by exon/intron structure) needs to be present in the input expressed as a fraction of the maximum value at a gene locus.", type=float, default=0)
     parser.add_argument("--min_read_support", help="Minimum number of times a read alignment (by exon/intron structure) needs to be present in the input.", type=int, default=1)
     parser.add_argument("--end_fuzz", help="Tolerated fuzziness of 5' and 3' ends for two reads to be considered equivalent when calculating read support", type=int, default=0)
@@ -47,22 +49,27 @@ def main():
 
     args = parser.parse_args()
 
+    if args.ont:
+        args.min_length = 200
+        args.min_isoform_fraction = 0.08
+        args.end_fuzz = 2
+        args.tolerance = 4
+    elif args.pacbio:
+        args.min_length = 200
+        args.end_fuzz = 4
+        args.tolerance = 2
+        args.min_isoform_fraction = 0.02
+
+    if (args.ont or args.pacbio) and args.splice_scoring:
+        args.min_isoform_fraction = 0
+        args.min_read_support = 1
+
+
     if args.splice_scoring and (args.min_isoform_fraction > 0 or args.min_read_support > 1):
         raise TypeError("You cannot use splice scoring and min_isoform_fraction/min_read_support at the same time")
 
     if args.ont and args.pacbio:
         raise TypeError("ONT and PacBio flags cannot be used together")
-
-    if args.ont:
-        args.min_length = 200
-        args.min_isoform_fraction = 0.09
-        args.end_fuzz = 2
-        args.tolerance = 7
-    elif args.pacbio:
-        args.min_length = 200
-        args.end_fuzz = 2
-        args.tolerance = 2
-        args.min_isoform_fraction = 0.05
 
     """
     Load plugins
