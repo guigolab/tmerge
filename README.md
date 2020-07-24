@@ -1,5 +1,5 @@
 # tmerge [![Build Status](https://travis-ci.com/jacobwindsor/tmerge.svg?branch=master)](https://travis-ci.com/jacobwindsor/tmerge)
-Merge transcriptome read-to-genome alignments into non-redundant transcript models.
+Build highly accurate full-length transcripts from third generation sequencing alignments.
 
 tmerge compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, i.e., merge compatible input transcripts into non-redundant transcript models.
 
