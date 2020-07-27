@@ -20,6 +20,7 @@ def main():
 
     # Stats
     parser.add_argument("-s", "--stats", action="store_true", help="Provide statistics for merged transcripts.")
+    parser.add_argument("--stats_output", help="Path to the output stats. Set to '-' for stderr.", default="tmerge.log")
 
     # Options for MinLength
     parser.add_argument("--min_length", help="The minimum length required for output transcripts.", default=0, type=int)

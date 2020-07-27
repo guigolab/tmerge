@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 import os, struct, math, sys
 from pyfaidx import Fasta
+import logging
 
 
 """
@@ -205,5 +206,5 @@ class SpliceSiteScoring():
     
     def print_skipped_chromosomes(self):
         if len(self.skipped_chroms) > 0:
-            print("Splice site scoring: some input chromosomes were not in the given genomes. Skipped splice site scoring on the following chromsomes: ")
-            print(", ".join(self.skipped_chroms))
+            logging.warn("Splice site scoring: some input chromosomes were not in the given genomes. Skipped splice site scoring on the following chromsomes: ")
+            logging.warn(", ".join(self.skipped_chroms))
