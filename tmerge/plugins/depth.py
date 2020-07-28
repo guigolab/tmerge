@@ -1,5 +1,6 @@
-from src.utils import ranges
 import statistics
+
+from tmerge.utils import ranges
 
 class Depth:
     """

@@ -1,7 +1,7 @@
 from itertools import product
 from functools import reduce, partial
 
-from ..utils import ranges
+from tmerge.utils import ranges
 
 def transcript_overlap(t1, t2):
     """

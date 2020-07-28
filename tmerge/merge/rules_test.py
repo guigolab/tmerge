@@ -1,8 +1,9 @@
 import unittest
 import copy
 
+from tmerge.utils.fakers import Faker
+
 from .rules import transcript_overlap, TSS_TES_overlap, ordered_subset, ruleset, first_last_exon_intron_overlap
-from ..utils.fakers import Faker
 
 class TestRules(unittest.TestCase):
     def setUp(self):

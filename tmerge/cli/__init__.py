@@ -1,6 +1,6 @@
 import getopt, argparse
-from plugins import Stats, ReadSupport, SplicedLengths, MergedInfo, SpliceSiteScoring, MinLength, Depth
-from src import merge
+from tmerge.plugins import Stats, ReadSupport, SplicedLengths, MergedInfo, SpliceSiteScoring, MinLength, Depth
+from tmerge import merge
 
 """
 tmerge CLI

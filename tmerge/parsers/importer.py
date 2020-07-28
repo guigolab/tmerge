@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from ..models.transcript_model import TranscriptModel
+from tmerge.models.transcript_model import TranscriptModel
 
 class Importer():
     def __init__(self, parser):

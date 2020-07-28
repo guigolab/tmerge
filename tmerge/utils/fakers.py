@@ -1,7 +1,7 @@
 import uuid
 import random
 
-from ..models.transcript_model import TranscriptModel
+from tmerge.models.transcript_model import TranscriptModel
 
 class Faker():
     """

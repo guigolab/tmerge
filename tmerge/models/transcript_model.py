@@ -1,6 +1,6 @@
 from typing import Tuple, Set
 
-from ..utils import ranges
+from tmerge.utils import ranges
 
 class TranscriptModel:
     """

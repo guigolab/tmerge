@@ -1,6 +1,6 @@
 import unittest
 
-from . import ranges
+import .ranges
 
 class TestRanges(unittest.TestCase):
     def test_overlaps(self):

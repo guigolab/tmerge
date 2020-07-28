@@ -5,10 +5,11 @@ from multiprocessing import Pool, Manager, Process, cpu_count
 from threading import Thread
 from queue import Queue
 
-from ..parsers import Importer, Gtf
-from ..models import TranscriptModel
-from ..output import gtf as write
-from ..utils import ranges
+from tmerge.parsers import Importer, Gtf
+from tmerge.models import TranscriptModel
+from tmerge.output import gtf as write
+from tmerge.utils import ranges
+
 from .rules import ruleset
 from .hook import Hook
 
