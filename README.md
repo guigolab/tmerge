@@ -139,7 +139,7 @@ This will automatically register your plugin with tmerge and the plugin will be 
 | post_sort          | Just after the merged output is sorted                                                       | None                                                                                                                                                                |
 | complete           | Everything complete                                                                          | None                                                                                                                                                                |
 ### Examples
-See the `plugins/` folder for examples of various plugins.
+See the `tmerge/plugins/` folder for examples of various plugins.
 
 
 ## Authors
