@@ -2,7 +2,7 @@
 Build highly accurate full-length transcripts from third generation sequencing alignments.
 
 ![tmerge_accuracy](images/ont_s_and_p.png)
-*Figure: tmerge vs StringTie2 and FLAIR for transcript-level sensitivity. Measurements performed with GFFCompare on 43 SIRV datasets sequenced with ONT.*
+*Figure: tmerge vs StringTie2 and FLAIR for transcript-level sensitivity and precision. Measurements performed with GFFCompare on 43 SIRV datasets sequenced with ONT.*
 
 
 tmerge compares transcript structures (or read-to-genome alignments) present in the input and attempts to reduce transcript redundancy, i.e., merge compatible input transcripts into non-redundant transcript models.
