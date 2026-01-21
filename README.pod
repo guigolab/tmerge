@@ -12,7 +12,7 @@ C<tmerge> is fast and can typically process several millions of aligned long rea
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge1.50dpi.png" alt="tmerge sketch" /></p>
+<p><img src="https://public-docs.crg.es/rguigo/CLS/img/tmerge1.50dpi.png" alt="tmerge sketch" /></p>
 
 =end HTML
 
@@ -103,7 +103,7 @@ C<tmerge> reduces redundancy in a set of transcriptome read-to-genome alignments
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge1.50dpi.png" alt="tmerge sketch" /></p>
+<p><img src="https://public-docs.crg.es/rguigo/CLS/img/tmerge1.50dpi.png" alt="tmerge sketch" /></p>
 
 =end HTML
 
@@ -129,7 +129,7 @@ Condition (2) means that C<tmerge> will never artificially extend intron chains:
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge2.50dpi.png" alt="tmerge non-merge case" /></p>
+<p><img src="https://public-docs.crg.es/rguigo/CLS/img/tmerge2.50dpi.png" alt="tmerge non-merge case" /></p>
 
 =end HTML
 
@@ -149,7 +149,7 @@ Setting this option to a positive integer can correct mismapped splice junctions
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_FalseExonOverhang.50dpi.png" alt="tmerge FalseExonOverhang sketch" /></p>
+<p><img src="https://public-docs.crg.es/rguigo/CLS/img/tmerge_FalseExonOverhang.50dpi.png" alt="tmerge FalseExonOverhang sketch" /></p>
 
 =end HTML
 
@@ -157,7 +157,7 @@ The setting works as explained below:
 
 =begin HTML
 
-<p><img src="http://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance.50dpi.png" alt="tmerge exonOverhangTolerance sketch" /></p>
+<p><img src="https://public-docs.crg.es/rguigo/CLS/img/tmerge_exonOverhangTolerance.50dpi.png" alt="tmerge exonOverhangTolerance sketch" /></p>
 
 =end HTML
 
